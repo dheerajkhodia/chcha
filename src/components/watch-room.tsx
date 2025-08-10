@@ -49,11 +49,19 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
     }])
 
     const handleFullScreenChange = () => {
-      setIsFullScreen(!!document.fullscreenElement);
-      if (!document.fullscreenElement) {
+      const isFs = !!document.fullscreenElement;
+      setIsFullScreen(isFs);
+      // When exiting fullscreen, always hide the mobile chat overlay
+      if (!isFs) {
         setShowMobileChat(false);
+        // Also ensure player goes back to minimized state if it was expanded
+        setIsPlayerExpanded(false);
+      } else {
+        // When entering fullscreen, expand the player
+        setIsPlayerExpanded(true);
       }
     };
+    
 
     document.addEventListener('fullscreenchange', handleFullScreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullScreenChange);
@@ -88,7 +96,8 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
   }
   
   const chatPanel = (
-    <ChatPanel
+      <ChatPanel
+        isMobile={!!isMobile}
         roomId={roomId}
         videoTitle={videoTitle}
         users={users}
@@ -114,9 +123,10 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
                       onSeek={handleSeek}
                       onTimeUpdate={handleTimeUpdate}
                       onDurationChange={handleDurationChange}
-                      isPlayerExpanded={isPlayerExpanded}
-                      onToggleExpand={() => setIsPlayerExpanded(p => !p)}
+                      isPlayerExpanded={true}
+                      onToggleExpand={() => {}}
                       onToggleMobileChat={() => setShowMobileChat(s => !s)}
+                      messages={messages}
                   />
                 </main>
                 <aside className={cn(
@@ -131,6 +141,7 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
             )
           }
 
+          // Mobile portrait view
           return (
              <div className="flex flex-col h-screen bg-background">
                 <main className="w-full">
@@ -145,13 +156,17 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
                         onSeek={handleSeek}
                         onTimeUpdate={handleTimeUpdate}
                         onDurationChange={handleDurationChange}
-                        isPlayerExpanded={false} // Always minimized in portrait
-                        onToggleExpand={() => {}} // Does nothing in portrait
+                        isPlayerExpanded={isPlayerExpanded}
+                        onToggleExpand={() => setIsPlayerExpanded(p => !p)}
                         onToggleMobileChat={() => {}}
+                        messages={messages}
                     />
                 </main>
-                <aside className="flex-1 flex flex-col min-h-0">
-                      {chatPanel}
+                <aside className={cn(
+                  "flex-1 flex flex-col min-h-0",
+                   isPlayerExpanded ? "hidden" : "flex"
+                )}>
+                    {chatPanel}
                 </aside>
              </div>
           )
@@ -178,6 +193,7 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
                     isPlayerExpanded={isPlayerExpanded}
                     onToggleExpand={() => setIsPlayerExpanded(p => !p)}
                     onToggleMobileChat={() => {}}
+                    messages={messages}
                 />
             </main>
             <aside className={cn(

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { formatTime } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import type { ChatMessage } from '@/types';
+import ChatOverlay from './chat-overlay';
 
 type VideoPlayerProps = {
   videoUrl: string;
@@ -23,6 +24,7 @@ type VideoPlayerProps = {
   onToggleExpand: () => void;
   onToggleMobileChat: () => void;
   isMobile: boolean;
+  messages: ChatMessage[];
 };
 
 export default function VideoPlayer({
@@ -39,6 +41,7 @@ export default function VideoPlayer({
   onToggleExpand,
   onToggleMobileChat,
   isMobile,
+  messages
 }: VideoPlayerProps) {
   const playerRef = useRef<ReactPlayer>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -182,6 +185,8 @@ export default function VideoPlayer({
             style: { width: '100%', height: '100%', objectFit: 'contain' }
         }}}}
       />
+
+      <ChatOverlay messages={messages} />
       
       {!hasStarted && !isLoading && (
         <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/40" >
