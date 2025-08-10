@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import ReactPlayer from 'react-player/lazy';
-import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, RefreshCw } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, RefreshCw, MessageSquare } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { formatTime } from '@/lib/utils';
@@ -19,8 +19,10 @@ type VideoPlayerProps = {
   onSeek: (time: number) => void;
   onTimeUpdate: (time: number) => void;
   onDurationChange: (duration: number) => void;
-  chatOverlayMessages: ChatMessage[];
-  isExpanded: boolean;
+  isPlayerExpanded: boolean;
+  onToggleExpand: () => void;
+  onToggleMobileChat: () => void;
+  isMobile: boolean;
 };
 
 export default function VideoPlayer({
@@ -33,8 +35,10 @@ export default function VideoPlayer({
   onSeek,
   onTimeUpdate,
   onDurationChange,
-  chatOverlayMessages,
-  isExpanded,
+  isPlayerExpanded,
+  onToggleExpand,
+  onToggleMobileChat,
+  isMobile,
 }: VideoPlayerProps) {
   const playerRef = useRef<ReactPlayer>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -100,7 +104,7 @@ export default function VideoPlayer({
           await screen.orientation.lock('landscape');
         }
       } catch (err: any) {
-        alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+        console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
       }
     } else {
       try {
@@ -118,10 +122,16 @@ export default function VideoPlayer({
   
 
   useEffect(() => {
-    const handleFullScreenChange = () => setIsFullScreen(!!document.fullscreenElement);
+    const handleFullScreenChange = () => {
+        const isCurrentlyFullScreen = !!document.fullscreenElement;
+        setIsFullScreen(isCurrentlyFullScreen);
+        if (!isCurrentlyFullScreen && !isPlayerExpanded) {
+            onToggleExpand();
+        }
+    };
     document.addEventListener('fullscreenchange', handleFullScreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullScreenChange);
-  }, []);
+  }, [isPlayerExpanded, onToggleExpand]);
 
   const hideControls = () => {
     if (controlsTimeoutRef.current) {
@@ -143,9 +153,9 @@ export default function VideoPlayer({
     <div
       ref={containerRef}
       className={cn(
-        "relative w-full h-full bg-black flex items-center justify-center overflow-hidden",
-        isExpanded ? "aspect-video" : ""
-        )}
+        "relative w-full bg-black flex items-center justify-center overflow-hidden",
+        isPlayerExpanded ? "h-full" : "aspect-video",
+      )}
       onPointerMove={handlePointerMove}
       onClick={handleContainerClick}
     >
@@ -199,17 +209,6 @@ export default function VideoPlayer({
         </div>
       )}
 
-      {chatOverlayMessages.length > 0 && isExpanded && (
-        <div className="absolute bottom-24 left-4 right-4 z-20 pointer-events-none md:hidden">
-          <div className="max-h-60 overflow-y-auto pr-4">
-          {chatOverlayMessages.slice(-5).map((msg) => (
-            <p key={msg.id} className="text-white p-1 text-lg" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.8)'}}>
-              <span className={cn("font-bold", msg.username === 'System' ? 'text-accent' : 'text-primary-foreground/80')}>{msg.username}:</span> {msg.message}
-            </p>
-          ))}
-          </div>
-        </div>
-      )}
 
       {/* Gradients */}
       <div
@@ -233,8 +232,7 @@ export default function VideoPlayer({
           showControls && hasStarted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full pointer-events-none'
         )}
       >
-        { isExpanded && (
-            <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
             <span className="text-sm font-mono w-14 text-center">{formatTime(currentTime)}</span>
             <Slider
                 value={[currentTime]}
@@ -244,8 +242,7 @@ export default function VideoPlayer({
                 className="w-full cursor-pointer"
             />
             <span className="text-sm font-mono w-14 text-center">{formatTime(duration)}</span>
-            </div>
-        )}
+        </div>
 
         <div className="flex items-center justify-between mt-2">
           <div className="flex items-center gap-1 sm:gap-2">
@@ -260,20 +257,11 @@ export default function VideoPlayer({
             </div>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
-            <Button variant="ghost" size="icon" onClick={toggleFullScreen} className="hover:bg-white/10">
-              {isFullScreen ? <Minimize /> : <Maximize />}
-            </Button>
+             <Button variant="ghost" size="icon" onClick={toggleFullScreen} className="hover:bg-transparent focus:bg-transparent active:bg-transparent">
+                {isFullScreen ? <Minimize /> : <Maximize />}
+              </Button>
           </div>
         </div>
-      </div>
-       {/* Top Controls */}
-       <div
-        onClick={(e) => e.stopPropagation()}
-        className={cn(
-          "absolute inset-x-0 top-0 p-3 sm:p-4 text-white z-20 transition-all duration-300 flex justify-end",
-          showControls && hasStarted ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        )}
-      >
       </div>
     </div>
   );
