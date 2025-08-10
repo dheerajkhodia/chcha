@@ -8,7 +8,6 @@ import type { ChatMessage, User } from '@/types';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-
 type WatchRoomProps = {
   roomId: string;
   initialVideoUrl: string;
@@ -16,7 +15,7 @@ type WatchRoomProps = {
 };
 
 export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: WatchRoomProps) {
-  const [username, setUsername] = useState(initialUsername || '');
+  const [username, setUsername] = useState('');
   const [users, setUsers] = useState<User[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -24,14 +23,15 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
   const [duration, setDuration] = useState(0);
   const isMobile = useIsMobile();
   const [isClient, setIsClient] = useState(false);
-  const [showChat, setShowChat] = useState(!isMobile);
+  const [showChat, setShowChat] = useState(true);
 
   useEffect(() => {
     setIsClient(true);
+    setShowChat(!isMobile);
+    
     const name = initialUsername || generateRandomName();
     setUsername(name);
     
-    // In a real app, you would connect to a WebSocket server here
     const currentUser = { id: 'local-user', username: name };
     setUsers([currentUser]);
 
@@ -42,13 +42,7 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
         timestamp: Date.now(),
     }])
 
-  }, [roomId, initialUsername]);
-
-  useEffect(() => {
-    if (isClient) {
-        setShowChat(!isMobile);
-    }
-  }, [isMobile, isClient]);
+  }, [roomId, initialUsername, isMobile]);
 
   // WebSocket event handlers (mocked)
   const handlePlay = useCallback(() => setIsPlaying(true), []);
@@ -70,7 +64,7 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
   const videoTitle = initialVideoUrl.split('/').pop()?.replace(/[\-_]/g, ' ') || 'Video';
 
   if (!isClient) {
-    return null;
+    return null; // or a loading skeleton
   }
 
   // Using Tailwind CSS classes for responsive layout
