@@ -23,7 +23,6 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isClient, setIsClient] = useState(false);
-  const [showChat, setShowChat] = useState(true);
   const [isPlayerExpanded, setIsPlayerExpanded] = useState(false);
   const isMobile = useIsMobile();
 
@@ -46,13 +45,6 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
         timestamp: Date.now(),
     }])
   }, [roomId, initialUsername]);
-  
-  useEffect(() => {
-      // This effect runs when isMobile changes or after the initial client render
-      if (isClient) {
-          setShowChat(!isMobile || !isPlayerExpanded);
-      }
-  }, [isMobile, isClient, isPlayerExpanded]);
 
 
   // WebSocket event handlers (mocked)
@@ -80,7 +72,7 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
       <div className="flex h-screen bg-background" />
     )
   }
-
+  
   const chatPanel = (
     <ChatPanel
         roomId={roomId}
@@ -88,51 +80,71 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
         users={users}
         messages={messages}
         onSendMessage={handleSendMessage}
-        onClose={isMobile ? () => setShowChat(false) : undefined}
     />
   );
   
-  return (
-    <div className={cn(
-      "flex h-screen bg-background flex-col", 
-    )}>
-      <main className={cn(
-        "flex flex-col justify-start md:justify-center",
-        isPlayerExpanded ? "flex-1" : "flex-shrink-0"
-        )}>
-        <VideoPlayer
-            videoUrl={initialVideoUrl}
-            isPlaying={isPlaying}
-            currentTime={currentTime}
-            duration={duration}
-            onPlay={handlePlay}
-            onPause={handlePause}
-            onSeek={handleSeek}
-            onTimeUpdate={handleTimeUpdate}
-            onDurationChange={handleDurationChange}
-            chatOverlayMessages={messages}
-            onToggleChat={isMobile ? () => setShowChat(s => !s) : undefined}
-            isExpanded={isPlayerExpanded}
-            onToggleExpand={() => setIsPlayerExpanded(e => !e)}
-        />
-      </main>
-      
-      {isMobile ? (
-        <Sheet open={showChat} onOpenChange={setShowChat}>
-            <SheetContent side="bottom" className="w-full h-[80%] flex flex-col p-0 border-none">
-                 <SheetTitle className="sr-only">Chat Panel</SheetTitle>
-                 <div className="flex-1 min-h-0">
+  const layout = (isMobile: boolean) => {
+      if(isMobile) {
+          return (
+             <div className="flex flex-col h-screen bg-background">
+                <main className={cn(
+                    "flex flex-col justify-start md:justify-center",
+                    isPlayerExpanded ? "flex-1" : "flex-shrink-0"
+                    )}>
+                    <VideoPlayer
+                        videoUrl={initialVideoUrl}
+                        isPlaying={isPlaying}
+                        currentTime={currentTime}
+                        duration={duration}
+                        onPlay={handlePlay}
+                        onPause={handlePause}
+                        onSeek={handleSeek}
+                        onTimeUpdate={handleTimeUpdate}
+                        onDurationChange={handleDurationChange}
+                        chatOverlayMessages={messages}
+                        isExpanded={isPlayerExpanded}
+                        onToggleExpand={() => setIsPlayerExpanded(e => !e)}
+                    />
+                </main>
+                <aside className={cn(
+                    "flex-1 flex flex-col min-h-0",
+                )}>
                     {chatPanel}
-                 </div>
-            </SheetContent>
-        </Sheet>
-      ) : (
-        <aside className={cn(
-            "flex-1 flex flex-col min-h-0",
-        )}>
-            {chatPanel}
-        </aside>
-      )}
-    </div>
-  );
+                </aside>
+             </div>
+          )
+      }
+
+      return (
+        <div className="flex h-screen bg-background">
+            <main className={cn(
+                "flex-1 flex flex-col justify-center transition-all duration-300",
+                isPlayerExpanded ? "w-full" : "w-1/2"
+            )}>
+                 <VideoPlayer
+                    videoUrl={initialVideoUrl}
+                    isPlaying={isPlaying}
+                    currentTime={currentTime}
+                    duration={duration}
+                    onPlay={handlePlay}
+                    onPause={handlePause}
+                    onSeek={handleSeek}
+                    onTimeUpdate={handleTimeUpdate}
+                    onDurationChange={handleDurationChange}
+                    chatOverlayMessages={messages}
+                    isExpanded={isPlayerExpanded}
+                    onToggleExpand={() => setIsPlayerExpanded(e => !e)}
+                />
+            </main>
+            <aside className={cn(
+                "w-1/2 flex-col min-h-0 transition-all duration-300 flex",
+                isPlayerExpanded ? "hidden" : "flex"
+            )}>
+                {chatPanel}
+            </aside>
+        </div>
+      )
+  }
+  
+  return layout(!!isMobile);
 }
