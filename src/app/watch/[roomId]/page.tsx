@@ -17,10 +17,10 @@ type WatchPageProps = {
 
 export default function WatchPage({ params, searchParams }: WatchPageProps) {
   const { roomId } = params;
-  const videoUrl = searchParams.videoUrl as string;
-  const username = searchParams.username as string;
+  const videoUrl = Array.isArray(searchParams.videoUrl) ? searchParams.videoUrl[0] : searchParams.videoUrl;
+  const username = Array.isArray(searchParams.username) ? searchParams.username[0] : searchParams.username;
   const isAdmin = searchParams.admin === 'true';
-  const adminName = searchParams.adminName as string;
+  const adminName = Array.isArray(searchParams.adminName) ? searchParams.adminName[0] : searchParams.adminName;
 
   if (!videoUrl) {
     return (
