@@ -8,6 +8,7 @@ import { Users, User, Link2 } from 'lucide-react';
 import type { ChatMessage, User as UserType } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
 
 
 type ChatPanelProps = {
@@ -91,7 +92,15 @@ export default function ChatPanel({
       <ScrollArea className="flex-grow p-4" ref={scrollAreaRef}>
          {messages.length > 0 ? (
             <div className="space-y-4">
-                {messages.map((msg) => (
+                {messages.map((msg) => {
+                  if(msg.type === 'system') {
+                    return (
+                        <div key={msg.id} className="text-sm text-center text-blue-400">
+                          {msg.message}
+                        </div>
+                    )
+                  }
+                  return (
                     <div key={msg.id} className="flex items-start gap-3 text-sm">
                         {renderUserAvatar(msg.username)}
                         <div>
@@ -99,7 +108,8 @@ export default function ChatPanel({
                             <span className="leading-relaxed">{msg.message}</span>
                         </div>
                     </div>
-                ))}
+                  )
+                })}
             </div>
         ) : (
             <p className="text-sm text-muted-foreground text-center py-4">No messages yet. Say hello!</p>

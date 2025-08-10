@@ -45,7 +45,23 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
         username: 'System',
         message: `Welcome ${name}! You are in room ${roomId}.`,
         timestamp: Date.now(),
-    }])
+        type: 'system',
+    }]);
+
+    // Simulate another user joining
+    setTimeout(() => {
+        const newUser: User = { id: 'user-2', username: generateRandomName() };
+        setUsers(prev => [...prev, newUser]);
+        const newMessage: ChatMessage = {
+            id: `system-${Date.now()}`,
+            username: 'System',
+            message: `${newUser.username} joined`,
+            timestamp: Date.now(),
+            type: 'system',
+        };
+        setMessages(prev => [...prev, newMessage]);
+    }, 3000);
+
 
     const handleFullScreenChange = () => {
       const isFs = !!document.fullscreenElement;
@@ -76,6 +92,7 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
       username: username,
       message,
       timestamp: Date.now(),
+      type: 'user',
     };
     setMessages(prev => [...prev, newMessage]);
   };
