@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import ReactPlayer from 'react-player/lazy';
-import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, RefreshCw, MessageSquare, Expand, Shrink } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, RefreshCw, MessageSquare } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { formatTime } from '@/lib/utils';
@@ -20,9 +20,7 @@ type VideoPlayerProps = {
   onTimeUpdate: (time: number) => void;
   onDurationChange: (duration: number) => void;
   chatOverlayMessages: ChatMessage[];
-  onToggleChat?: () => void;
   isExpanded: boolean;
-  onToggleExpand: () => void;
 };
 
 export default function VideoPlayer({
@@ -36,9 +34,7 @@ export default function VideoPlayer({
   onTimeUpdate,
   onDurationChange,
   chatOverlayMessages,
-  onToggleChat,
   isExpanded,
-  onToggleExpand,
 }: VideoPlayerProps) {
   const playerRef = useRef<ReactPlayer>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -126,11 +122,6 @@ export default function VideoPlayer({
     setShowControls(true);
     hideControls();
   };
-
-  const handleToggleExpand = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onToggleExpand();
-  };
   
   return (
     <div
@@ -175,6 +166,11 @@ export default function VideoPlayer({
                 variant="ghost"
                 size="icon"
                 className="w-20 h-20 text-white bg-black/50 hover:bg-black/70 rounded-full"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    if (!isPlaying) onPlay();
+                    setHasStarted(true);
+                }}
             >
                 <Play size={48} className="ml-1" />
             </Button>
@@ -248,9 +244,6 @@ export default function VideoPlayer({
             </div>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
-             <Button variant="ghost" size="icon" onClick={handleToggleExpand} className="hover:bg-white/10">
-              {isExpanded ? <Shrink /> : <Expand />}
-            </Button>
              <Button variant="ghost" size="icon" onClick={toggleFullScreen} className="hover:bg-white/10 md:flex hidden">
               {isFullScreen ? <Minimize /> : <Maximize />}
             </Button>
@@ -265,11 +258,6 @@ export default function VideoPlayer({
           showControls && hasStarted ? 'opacity-100' : 'opacity-0 pointer-events-none'
         )}
       >
-        {onToggleChat && (
-          <Button variant="ghost" size="icon" onClick={onToggleChat} className="hover:bg-white/10 md:hidden">
-            <MessageSquare />
-          </Button>
-        )}
       </div>
     </div>
   );

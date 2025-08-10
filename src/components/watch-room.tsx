@@ -80,8 +80,8 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
     />
   );
   
-  const layout = (isMobile: boolean) => {
-      if(isMobile) {
+  const layout = (isMobileLayout: boolean) => {
+      if(isMobileLayout) {
           return (
              <div className="flex flex-col h-screen bg-background">
                 <main className={cn(
@@ -100,16 +100,13 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
                         onDurationChange={handleDurationChange}
                         chatOverlayMessages={messages}
                         isExpanded={isPlayerExpanded}
-                        onToggleExpand={() => setIsPlayerExpanded(e => !e)}
-                        onToggleChat={() => setShowMobileChat(c => !c)}
                     />
                 </main>
-                 <aside className={cn(
-                    "flex-1 flex flex-col min-h-0",
-                     !showMobileChat && "hidden"
-                )}>
-                    {chatPanel}
-                </aside>
+                {isMobile && !showMobileChat ? null : (
+                    <aside className="flex-1 flex flex-col min-h-0">
+                         {chatPanel}
+                    </aside>
+                )}
              </div>
           )
       }
@@ -132,7 +129,6 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
                     onDurationChange={handleDurationChange}
                     chatOverlayMessages={messages}
                     isExpanded={isPlayerExpanded}
-                    onToggleExpand={() => setIsPlayerExpanded(e => !e)}
                 />
             </main>
             <aside className={cn(
