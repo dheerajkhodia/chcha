@@ -20,6 +20,7 @@ export default function WatchPage({ params, searchParams }: WatchPageProps) {
   const videoUrl = searchParams.videoUrl as string;
   const username = searchParams.username as string;
   const isAdmin = searchParams.admin === 'true';
+  const adminName = searchParams.adminName as string;
 
   if (!videoUrl) {
     return (
@@ -47,8 +48,8 @@ export default function WatchPage({ params, searchParams }: WatchPageProps) {
 
   // If the user is not the admin and hasn't provided a username, show the join form.
   if (!isAdmin && !username) {
-    return <JoinRoomForm roomId={roomId} videoUrl={videoUrl} />;
+    return <JoinRoomForm roomId={roomId} videoUrl={videoUrl} adminName={adminName} />;
   }
 
-  return <WatchRoom roomId={roomId} initialVideoUrl={videoUrl} initialUsername={username} isAdmin={isAdmin} />;
+  return <WatchRoom roomId={roomId} initialVideoUrl={videoUrl} initialUsername={username} isAdmin={isAdmin} adminUsername={adminName || (isAdmin ? username : undefined)} />;
 }

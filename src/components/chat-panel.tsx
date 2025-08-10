@@ -17,6 +17,7 @@ type ChatPanelProps = {
   messages: ChatMessage[],
   onSendMessage: (message: string) => void;
   adminUsername?: string;
+  currentUsername: string;
 };
 
 export default function ChatPanel({
@@ -26,6 +27,7 @@ export default function ChatPanel({
   messages,
   onSendMessage,
   adminUsername,
+  currentUsername
 }: ChatPanelProps) {
   const [message, setMessage] = React.useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -36,6 +38,12 @@ export default function ChatPanel({
     const inviteUrl = new URL(window.location.href);
     inviteUrl.searchParams.delete('username');
     inviteUrl.searchParams.delete('admin');
+
+    // If the current user is the admin, add their name to the invite link
+    if(adminUsername && adminUsername === currentUsername) {
+        inviteUrl.searchParams.set('adminName', adminUsername);
+    }
+    
 
     navigator.clipboard.writeText(inviteUrl.toString()).then(() => {
       toast({

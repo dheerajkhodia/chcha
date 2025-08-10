@@ -14,9 +14,10 @@ type WatchRoomProps = {
   initialVideoUrl: string;
   initialUsername?: string;
   isAdmin: boolean;
+  adminUsername?: string;
 };
 
-export default function WatchRoom({ roomId, initialVideoUrl, initialUsername, isAdmin }: WatchRoomProps) {
+export default function WatchRoom({ roomId, initialVideoUrl, initialUsername, isAdmin, adminUsername }: WatchRoomProps) {
   const [username, setUsername] = useState('');
   const [users, setUsers] = useState<User[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -101,7 +102,12 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername, is
     if(isAdmin) setCurrentTime(time)
   }, [isAdmin]);
   
-  const handleTimeUpdate = useCallback((time: number) => setCurrentTime(time), []);
+  const handleTimeUpdate = useCallback((time: number) => {
+    // Only admin should be able to broadcast time updates
+     if(isAdmin) {
+        setCurrentTime(time)
+     }
+  }, [isAdmin]);
   const handleDurationChange = useCallback((d: number) => setDuration(d), []);
 
   const handleSendMessage = (message: string) => {
@@ -131,7 +137,8 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername, is
       users={users}
       messages={messages}
       onSendMessage={handleSendMessage}
-      adminUsername={isAdmin ? username : undefined}
+      adminUsername={adminUsername}
+      currentUsername={username}
     />
   );
 

@@ -14,8 +14,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, PartyPopper, Film } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { User, PartyPopper, Film, Crown } from "lucide-react";
 
 const formSchema = z.object({
   username: z.string().min(2, { message: "Nickname must be at least 2 characters." }).optional().or(z.literal("")),
@@ -24,9 +24,10 @@ const formSchema = z.object({
 type JoinRoomFormProps = {
     roomId: string;
     videoUrl: string;
+    adminName?: string;
 }
 
-export function JoinRoomForm({ roomId, videoUrl }: JoinRoomFormProps) {
+export function JoinRoomForm({ roomId, videoUrl, adminName }: JoinRoomFormProps) {
   const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -40,6 +41,9 @@ export function JoinRoomForm({ roomId, videoUrl }: JoinRoomFormProps) {
     params.set("videoUrl", videoUrl);
     if (values.username) {
       params.set("username", values.username);
+    }
+    if (adminName) {
+      params.set("adminName", adminName);
     }
     router.push(`/watch/${roomId}?${params.toString()}`);
   }
@@ -56,6 +60,12 @@ export function JoinRoomForm({ roomId, videoUrl }: JoinRoomFormProps) {
             <Card className="w-full max-w-md mx-auto shadow-lg border-2 border-primary/20">
                 <CardHeader>
                     <CardTitle className="text-2xl text-center">Join Watch Party</CardTitle>
+                    {adminName && (
+                        <CardDescription className="text-center pt-2 flex items-center justify-center gap-1.5 text-amber-500">
+                             <Crown className="h-4 w-4" />
+                             {adminName} is the admin of this room.
+                        </CardDescription>
+                    )}
                 </CardHeader>
                 <CardContent>
                     <Form {...form}>
