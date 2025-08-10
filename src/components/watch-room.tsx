@@ -5,6 +5,7 @@ import VideoPlayer from '@/components/video-player';
 import ChatPanel from '@/components/chat-panel';
 import { generateRandomName } from '@/lib/utils';
 import type { ChatMessage, User } from '@/types';
+import { Sidebar, SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 
 type WatchRoomProps = {
   roomId: string;
@@ -19,7 +20,6 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isChatOverlay, setIsChatOverlay] = useState(false);
 
   useEffect(() => {
     const name = initialUsername || generateRandomName();
@@ -59,41 +59,33 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
     setMessages(prev => [...prev, newMessage]);
   };
   
-  const videoTitle = initialVideoUrl.split('/').pop() || 'Video';
-
-  const handleToggleChatOverlay = useCallback(() => {
-    setIsChatOverlay(prev => !prev);
-  }, []);
+  const videoTitle = initialVideoUrl.split('/').pop()?.replace(/[\-_]/g, ' ') || 'Video';
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-black">
-      <div className="flex-grow flex flex-col bg-black">
-        <VideoPlayer
-          videoUrl={initialVideoUrl}
-          isPlaying={isPlaying}
-          currentTime={currentTime}
-          duration={duration}
-          onPlay={handlePlay}
-          onPause={handlePause}
-          onSeek={handleSeek}
-          onTimeUpdate={handleTimeUpdate}
-          onDurationChange={handleDurationChange}
-          chatOverlayMessages={isChatOverlay ? messages : []}
-          isChatOverlay={isChatOverlay}
-          onToggleChatOverlay={handleToggleChatOverlay}
-        />
-      </div>
-      <div className="w-full md:w-80 lg:w-96 bg-card flex flex-col h-1/2 md:h-full">
-        <ChatPanel
-          roomId={roomId}
-          videoTitle={videoTitle}
-          users={users}
-          messages={messages}
-          onSendMessage={handleSendMessage}
-          isChatOverlay={isChatOverlay}
-          onToggleChatOverlay={handleToggleChatOverlay}
-        />
-      </div>
-    </div>
+    <SidebarProvider defaultOpen={true}>
+        <SidebarInset>
+             <VideoPlayer
+                videoUrl={initialVideoUrl}
+                isPlaying={isPlaying}
+                currentTime={currentTime}
+                duration={duration}
+                onPlay={handlePlay}
+                onPause={handlePause}
+                onSeek={handleSeek}
+                onTimeUpdate={handleTimeUpdate}
+                onDurationChange={handleDurationChange}
+                chatOverlayMessages={[]}
+            />
+        </SidebarInset>
+        <Sidebar side="right" collapsible="icon" className="max-w-sm">
+            <ChatPanel
+                roomId={roomId}
+                videoTitle={videoTitle}
+                users={users}
+                messages={messages}
+                onSendMessage={handleSendMessage}
+            />
+        </Sidebar>
+    </SidebarProvider>
   );
 }

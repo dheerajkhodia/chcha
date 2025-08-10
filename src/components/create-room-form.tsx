@@ -14,13 +14,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { generateRandomId } from "@/lib/utils";
-import { Video, User } from "lucide-react";
+import { Video, User, PartyPopper } from "lucide-react";
 
 const formSchema = z.object({
   videoUrl: z.string().url({ message: "Please enter a valid video URL." }),
-  username: z.string().optional(),
+  username: z.string().min(2, { message: "Nickname must be at least 2 characters." }).optional().or(z.literal("")),
 });
 
 export function CreateRoomForm() {
@@ -44,11 +44,8 @@ export function CreateRoomForm() {
   }
 
   return (
-    <Card className="mt-8 w-full shadow-lg">
-      <CardHeader>
-        <CardTitle className="text-center text-2xl font-headline">Create a Room</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <Card className="mt-8 w-full shadow-lg border-2 border-primary/20">
+      <CardContent className="p-4 sm:p-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
@@ -60,7 +57,7 @@ export function CreateRoomForm() {
                   <div className="relative">
                     <Video className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <FormControl>
-                      <Input placeholder="https://example.com/video.mp4" {...field} className="pl-10" />
+                      <Input required type="url" placeholder="https://example.com/video.mp4" {...field} className="pl-10" />
                     </FormControl>
                   </div>
                   <FormMessage />
@@ -72,11 +69,11 @@ export function CreateRoomForm() {
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nickname (Optional)</FormLabel>
+                  <FormLabel>Your Nickname</FormLabel>
                    <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <FormControl>
-                      <Input placeholder="Enter your nickname" {...field} className="pl-10" />
+                      <Input placeholder="Enter your nickname (optional)" {...field} className="pl-10" />
                     </FormControl>
                   </div>
                   <FormMessage />
@@ -84,7 +81,8 @@ export function CreateRoomForm() {
               )}
             />
             <Button type="submit" className="w-full bg-primary hover:bg-primary/90" size="lg">
-              Create Room
+              <PartyPopper className="mr-2"/>
+              Start Watch Party
             </Button>
           </form>
         </Form>

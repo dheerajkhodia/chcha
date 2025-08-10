@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, RefreshCw, MessageSquare } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, RefreshCw, MessageSquare, SidebarClose } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { formatTime } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import type { ChatMessage } from '@/types';
+import { useSidebar } from '@/components/ui/sidebar';
 
 type VideoPlayerProps = {
   videoUrl: string;
@@ -19,8 +20,6 @@ type VideoPlayerProps = {
   onTimeUpdate: (time: number) => void;
   onDurationChange: (duration: number) => void;
   chatOverlayMessages: ChatMessage[];
-  isChatOverlay: boolean;
-  onToggleChatOverlay: () => void;
 };
 
 export default function VideoPlayer({
@@ -34,8 +33,6 @@ export default function VideoPlayer({
   onTimeUpdate,
   onDurationChange,
   chatOverlayMessages,
-  isChatOverlay,
-  onToggleChatOverlay,
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -45,6 +42,7 @@ export default function VideoPlayer({
   const [showControls, setShowControls] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { isMobile, toggleSidebar, state: sidebarState } = useSidebar();
 
   useEffect(() => {
     if (!videoRef.current) return;
@@ -69,9 +67,9 @@ export default function VideoPlayer({
     if (videoRef.current) onTimeUpdate(videoRef.current.currentTime);
   };
 
-  const togglePlay = () => {
+  const togglePlay = useCallback(() => {
     isPlaying ? onPause() : onPlay();
-  };
+  }, [isPlaying, onPause, onPlay]);
   
   const handleVolumeChange = (value: number[]) => {
     const newVolume = value[0];
@@ -119,13 +117,20 @@ export default function VideoPlayer({
     if(isPlaying) setShowControls(false);
   }
 
+  const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Only toggle play if the click is on the container itself, not the controls
+    if (e.target === containerRef.current || e.target === videoRef.current) {
+      togglePlay();
+    }
+  };
+
   return (
     <div
       ref={containerRef}
       className="relative w-full h-full bg-black flex items-center justify-center overflow-hidden group"
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      onClick={togglePlay}
+      onClick={handleContainerClick}
     >
       <video
         ref={videoRef}
@@ -133,8 +138,8 @@ export default function VideoPlayer({
         className="w-full h-full object-contain"
         onLoadedMetadata={handleLoadedMetadata}
         onTimeUpdate={handleTimeUpdate}
-        onPlay={() => onPlay()}
-        onPause={() => onPause()}
+        onPlay={() => !isPlaying && onPlay()}
+        onPause={() => isPlaying && onPause()}
         onWaiting={() => setIsLoading(true)}
         onPlaying={() => setIsLoading(false)}
         onDurationChange={() => videoRef.current && onDurationChange(videoRef.current.duration)}
@@ -142,7 +147,7 @@ export default function VideoPlayer({
       />
       
       {isLoading && (
-         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10">
+         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10 pointer-events-none">
             <RefreshCw className="w-12 h-12 text-white animate-spin" />
         </div>
       )}
@@ -151,7 +156,7 @@ export default function VideoPlayer({
         <div className="absolute bottom-24 left-4 right-4 z-20 pointer-events-none">
           <div className="max-h-60 overflow-y-auto pr-4">
           {chatOverlayMessages.slice(-5).map((msg) => (
-            <p key={msg.id} className="text-white text-shadow p-1 text-lg" style={{textShadow: '1px 1px 3px rgba(0,0,0,0.7)'}}>
+            <p key={msg.id} className="text-white p-1 text-lg" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.8)'}}>
               <span className={cn("font-bold", msg.username === 'System' ? 'text-accent' : 'text-primary-foreground/80')}>{msg.username}:</span> {msg.message}
             </p>
           ))}
@@ -161,7 +166,13 @@ export default function VideoPlayer({
 
       <div
         className={cn(
-          "absolute inset-0 bg-gradient-to-t from-black/60 to-transparent transition-opacity duration-300 pointer-events-none",
+          "absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent transition-opacity duration-300 pointer-events-none",
+          showControls ? "opacity-100" : "opacity-0"
+        )}
+      />
+      <div
+        className={cn(
+          "absolute inset-0 bg-gradient-to-b from-black/50 to-transparent transition-opacity duration-300 pointer-events-none",
           showControls ? "opacity-100" : "opacity-0"
         )}
       />
@@ -169,11 +180,11 @@ export default function VideoPlayer({
       <div
         onClick={(e) => e.stopPropagation()}
         className={cn(
-          "absolute bottom-0 left-0 right-0 p-4 text-white z-20 transition-opacity duration-300",
-          showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          "absolute inset-x-0 bottom-0 p-3 sm:p-4 text-white z-20 transition-all duration-300",
+          showControls ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full pointer-events-none'
         )}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <span className="text-sm font-mono w-14 text-center">{formatTime(currentTime)}</span>
           <Slider
             value={[currentTime]}
@@ -185,26 +196,34 @@ export default function VideoPlayer({
         </div>
 
         <div className="flex items-center justify-between mt-2">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={togglePlay}>
+          <div className="flex items-center gap-1 sm:gap-2">
+            <Button variant="ghost" size="icon" onClick={togglePlay} className="hover:bg-white/10">
               {isPlaying ? <Pause size={24} /> : <Play size={24} />}
             </Button>
-            <div className="flex items-center gap-2 w-32">
-              <Button variant="ghost" size="icon" onClick={toggleMute}>
+            <div className="flex items-center gap-2 w-28 sm:w-32">
+              <Button variant="ghost" size="icon" onClick={toggleMute} className="hover:bg-white/10">
                 {isMuted || volume === 0 ? <VolumeX /> : <Volume2 />}
               </Button>
               <Slider value={[isMuted ? 0 : volume]} max={1} step={0.05} onValueChange={handleVolumeChange} />
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={onToggleChatOverlay} className={cn(isChatOverlay && "bg-accent/20 text-accent")}>
-              <MessageSquare />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={toggleFullScreen}>
+          <div className="flex items-center gap-1 sm:gap-2">
+             <Button variant="ghost" size="icon" onClick={toggleFullScreen} className="hover:bg-white/10">
               {isFullScreen ? <Minimize /> : <Maximize />}
             </Button>
           </div>
         </div>
+      </div>
+       <div
+        onClick={(e) => e.stopPropagation()}
+        className={cn(
+          "absolute inset-x-0 top-0 p-3 sm:p-4 text-white z-20 transition-all duration-300 flex justify-end",
+          showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        )}
+      >
+        <Button variant="ghost" size="icon" onClick={toggleSidebar} className="hover:bg-white/10">
+          {(isMobile || sidebarState === 'expanded') ? <MessageSquare /> : <SidebarClose />}
+        </Button>
       </div>
     </div>
   );

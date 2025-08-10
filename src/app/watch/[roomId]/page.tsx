@@ -2,7 +2,8 @@ import WatchRoom from '@/components/watch-room';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, AlertTriangle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title: 'Watch Room | SynchWatch',
@@ -20,15 +21,24 @@ export default function WatchPage({ params, searchParams }: WatchPageProps) {
 
   if (!videoUrl) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-background text-center p-4">
-        <h2 className="text-2xl font-bold text-destructive mb-4">Video URL Missing</h2>
-        <p className="text-muted-foreground mb-6">A video URL is required to start a watch party.</p>
-        <Button asChild>
-          <Link href="/">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Create a New Room
-          </Link>
-        </Button>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md shadow-lg">
+            <CardHeader>
+                <CardTitle className="flex items-center justify-center gap-2 text-2xl text-destructive">
+                    <AlertTriangle />
+                    Video URL Missing
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="text-center">
+                <p className="text-muted-foreground mb-6">A video URL is required to start a watch party.</p>
+                <Button asChild>
+                <Link href="/">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Create a New Room
+                </Link>
+                </Button>
+            </CardContent>
+        </Card>
       </div>
     );
   }
