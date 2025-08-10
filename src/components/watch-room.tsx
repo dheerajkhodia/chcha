@@ -16,16 +16,18 @@ type WatchRoomProps = {
 };
 
 export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: WatchRoomProps) {
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState(initialUsername || '');
   const [users, setUsers] = useState<User[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const isMobile = useIsMobile();
-
+  const [isClient, setIsClient] = useState(false);
+  const [showChat, setShowChat] = useState(!isMobile);
 
   useEffect(() => {
+    setIsClient(true);
     const name = initialUsername || generateRandomName();
     setUsername(name);
     
@@ -41,6 +43,12 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
     }])
 
   }, [roomId, initialUsername]);
+
+  useEffect(() => {
+    if (isClient) {
+        setShowChat(!isMobile);
+    }
+  }, [isMobile, isClient]);
 
   // WebSocket event handlers (mocked)
   const handlePlay = useCallback(() => setIsPlaying(true), []);
@@ -61,9 +69,13 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
   
   const videoTitle = initialVideoUrl.split('/').pop()?.replace(/[\-_]/g, ' ') || 'Video';
 
+  if (!isClient) {
+    return null;
+  }
+
   // Using Tailwind CSS classes for responsive layout
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-background">
+    <div className={cn("flex h-screen bg-background", isMobile ? "flex-col" : "flex-row")}>
       <main className="flex-1 flex flex-col justify-center">
         <VideoPlayer
             videoUrl={initialVideoUrl}
@@ -76,15 +88,21 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
             onTimeUpdate={handleTimeUpdate}
             onDurationChange={handleDurationChange}
             chatOverlayMessages={[]}
+            onToggleChat={() => setShowChat(s => !s)}
         />
       </main>
-      <aside className="w-full md:w-80 lg:w-96 flex-shrink-0 h-full flex flex-col">
+      <aside className={cn(
+        "flex-shrink-0 h-full flex flex-col",
+        isMobile ? "w-full" : "w-80 lg:w-96",
+        isMobile && !showChat ? "hidden" : ""
+      )}>
         <ChatPanel
             roomId={roomId}
             videoTitle={videoTitle}
             users={users}
             messages={messages}
             onSendMessage={handleSendMessage}
+            onClose={() => setShowChat(false)}
         />
       </aside>
     </div>
