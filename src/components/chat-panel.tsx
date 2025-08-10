@@ -4,19 +4,10 @@ import React, { useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Users, MessageSquare, Tv, Clipboard, X, User } from 'lucide-react';
+import { Send, Users, X, User } from 'lucide-react';
 import type { ChatMessage, User as UserType } from '@/types';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-import { Badge } from "@/components/ui/badge";
-import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import ContentRecommendation from '@/components/content-recommendation';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 
 type ChatPanelProps = {
@@ -119,23 +110,8 @@ export default function ChatPanel({
         )}
       </ScrollArea>
       
-      {/* Actions / Recommendations */}
-       <Accordion type="single" collapsible className="w-full border-t">
-          <AccordionItem value="item-1" className="border-b-0">
-              <AccordionTrigger className="px-4 py-3 text-sm font-semibold hover:no-underline">
-                  <div className="flex items-center gap-2">
-                      <Tv className="h-5 w-5"/>
-                      <span>Watch Next?</span>
-                  </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-4 pb-4">
-                 <ContentRecommendation currentVideoTitle={videoTitle} />
-              </AccordionContent>
-          </AccordionItem>
-      </Accordion>
-
       {/* Input */}
-      <div className="p-4 border-t mt-auto bg-background">
+      <div className="p-4 border-t bg-background">
         <form onSubmit={handleSubmit} className="flex items-center gap-2">
           <Input
             value={message}
