@@ -90,7 +90,6 @@ export default function ChatPanel({
 
   return (
     <div className="flex flex-col h-full bg-card text-card-foreground border-l relative">
-      <SheetTitle className="sr-only">Chat Panel</SheetTitle>
       {/* Header */}
       <div className="p-4 border-b">
         <div className="flex justify-between items-center mb-2">

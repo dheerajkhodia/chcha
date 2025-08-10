@@ -7,7 +7,7 @@ import { generateRandomName } from '@/lib/utils';
 import type { ChatMessage, User } from '@/types';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { SheetTitle } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 
 type WatchRoomProps = {
   roomId: string;
@@ -81,11 +81,20 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
     )
   }
 
-  // Using Tailwind CSS classes for responsive layout
+  const chatPanel = (
+    <ChatPanel
+        roomId={roomId}
+        videoTitle={videoTitle}
+        users={users}
+        messages={messages}
+        onSendMessage={handleSendMessage}
+        onClose={isMobile ? () => setShowChat(false) : undefined}
+    />
+  );
+  
   return (
     <div className={cn(
-      "flex h-screen bg-background", 
-      isPlayerExpanded && isMobile ? "flex-col" : "flex-col-reverse md:flex-row"
+      "flex h-screen bg-background flex-col", 
     )}>
       <main className={cn(
         "flex flex-col justify-start md:justify-center",
@@ -102,25 +111,28 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
             onTimeUpdate={handleTimeUpdate}
             onDurationChange={handleDurationChange}
             chatOverlayMessages={messages}
-            onToggleChat={() => setShowChat(s => !s)}
+            onToggleChat={isMobile ? () => setShowChat(s => !s) : undefined}
             isExpanded={isPlayerExpanded}
             onToggleExpand={() => setIsPlayerExpanded(e => !e)}
         />
       </main>
-      <aside className={cn(
-        "flex-shrink-0 flex flex-col",
-        isMobile ? "w-full flex-1 min-h-0" : "w-80 lg:w-96 h-full",
-        isMobile && !showChat ? "hidden" : "flex"
-      )}>
-        <ChatPanel
-            roomId={roomId}
-            videoTitle={videoTitle}
-            users={users}
-            messages={messages}
-            onSendMessage={handleSendMessage}
-            onClose={() => setShowChat(false)}
-        />
-      </aside>
+      
+      {isMobile ? (
+        <Sheet open={showChat} onOpenChange={setShowChat}>
+            <SheetContent side="bottom" className="w-full h-[80%] flex flex-col p-0 border-none">
+                 <SheetTitle className="sr-only">Chat Panel</SheetTitle>
+                 <div className="flex-1 min-h-0">
+                    {chatPanel}
+                 </div>
+            </SheetContent>
+        </Sheet>
+      ) : (
+        <aside className={cn(
+            "flex-1 flex flex-col min-h-0",
+        )}>
+            {chatPanel}
+        </aside>
+      )}
     </div>
   );
 }
