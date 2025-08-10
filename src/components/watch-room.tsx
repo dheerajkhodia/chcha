@@ -1,13 +1,13 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import io, { Socket } from 'socket.io-client';
 import VideoPlayer from '@/components/video-player';
 import ChatPanel from '@/components/chat-panel';
 import { generateRandomName } from '@/lib/utils';
 import type { ChatMessage, User } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { cn } from '@/lib/utils';
 
 type WatchRoomProps = {
   roomId: string;
@@ -16,6 +16,8 @@ type WatchRoomProps = {
   isAdmin: boolean;
   adminUsername?: string;
 };
+
+const SOCKET_SERVER_URL = 'http://localhost:3001';
 
 export default function WatchRoom({ roomId, initialVideoUrl, initialUsername, isAdmin, adminUsername }: WatchRoomProps) {
   const [username, setUsername] = useState('');
@@ -30,104 +32,154 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername, is
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showChatOverlay, setShowChatOverlay] = useState(true);
 
-  useEffect(() => {
-    // This effect runs once on the client after hydration
-    setIsClient(true);
-    
-    // Logic that depends on browser APIs or random values
-    const name = initialUsername || generateRandomName();
-    setUsername(name);
-    
-    const currentUser = { id: 'local-user', username: name };
-    setUsers([currentUser]);
+  const socketRef = useRef<Socket | null>(null);
+  const timeUpdateIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-    setMessages([{
-        id: 'system-1',
+  const initializeSocket = useCallback((name: string) => {
+    if (socketRef.current) return;
+
+    const socket = io(SOCKET_SERVER_URL);
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      console.log('Connected to socket server');
+      socket.emit('join-room', { roomId, username: name, isAdmin });
+    });
+
+    socket.on('room-state', (state: { users: User[], playbackState: { isPlaying: boolean, time: number } }) => {
+      setUsers(state.users);
+      setIsPlaying(state.playbackState.isPlaying);
+      setCurrentTime(state.playbackState.time);
+    });
+
+    socket.on('user-joined', (user: User) => {
+      setUsers(prev => [...prev, user]);
+      setMessages(prev => [...prev, {
+        id: `system-${user.id}`,
         username: 'System',
-        message: `Welcome ${name}! You are in room ${roomId}.`,
+        message: `${user.username} joined`,
         timestamp: Date.now(),
         type: 'system',
-    }]);
+      }]);
+    });
 
-    if (!isAdmin) {
-        const joinMessage: ChatMessage = {
-            id: `system-${Date.now()}`,
-            username: 'System',
-            message: `${name} joined`,
-            timestamp: Date.now(),
-            type: 'system',
-        };
-        setMessages(prev => [...prev, joinMessage]);
-    } else {
-        // Simulate another user joining for the admin
-        setTimeout(() => {
-            const newUser: User = { id: 'user-2', username: generateRandomName() };
-            setUsers(prev => [...prev, newUser]);
-            const newMessage: ChatMessage = {
-                id: `system-${Date.now()}`,
-                username: 'System',
-                message: `${newUser.username} joined`,
-                timestamp: Date.now(),
-                type: 'system',
-            };
-            setMessages(prev => [...prev, newMessage]);
-        }, 3000);
-    }
+    socket.on('user-left', ({ id, username: leftUsername }) => {
+      setUsers(prev => prev.filter(u => u.id !== id));
+      setMessages(prev => [...prev, {
+        id: `system-${id}`,
+        username: 'System',
+        message: `${leftUsername} left`,
+        timestamp: Date.now(),
+        type: 'system',
+      }]);
+    });
 
+    socket.on('receive-message', (message: ChatMessage) => {
+      setMessages(prev => [...prev, message]);
+    });
+
+    socket.on('playback-update', (state: { isPlaying: boolean, time: number }) => {
+      setIsPlaying(state.isPlaying);
+      // Only seek if there's a significant difference to avoid jerky playback
+      if (Math.abs(currentTime - state.time) > 2) {
+          setCurrentTime(state.time);
+      }
+    });
+
+  }, [roomId, isAdmin, currentTime]);
+
+  useEffect(() => {
+    setIsClient(true);
+    const name = initialUsername || generateRandomName();
+    setUsername(name);
+    initializeSocket(name);
 
     const handleFullScreenChange = () => {
       const isFs = !!document.fullscreenElement;
       setIsFullScreen(isFs);
-      // When exiting fullscreen, always hide the mobile chat overlay
       if (!isFs) {
         setShowMobileChat(false);
       }
     };
     
-
     document.addEventListener('fullscreenchange', handleFullScreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullScreenChange);
+    
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullScreenChange);
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+      if (timeUpdateIntervalRef.current) {
+        clearInterval(timeUpdateIntervalRef.current);
+      }
+    };
+  }, [roomId, initialUsername, initializeSocket]);
 
-  }, [roomId, initialUsername, isAdmin]);
+  const sendPlaybackState = useCallback(() => {
+    if (isAdmin && socketRef.current) {
+      socketRef.current.emit('playback-control', { 
+        state: { isPlaying, time: currentTime }
+      });
+    }
+  }, [isAdmin, isPlaying, currentTime]);
 
+  useEffect(() => {
+    if (isAdmin) {
+      if (timeUpdateIntervalRef.current) clearInterval(timeUpdateIntervalRef.current);
+      timeUpdateIntervalRef.current = setInterval(sendPlaybackState, 2000);
+    }
+    return () => {
+      if (timeUpdateIntervalRef.current) clearInterval(timeUpdateIntervalRef.current);
+    }
+  }, [isAdmin, sendPlaybackState]);
 
-  // WebSocket event handlers (mocked)
   const handlePlay = useCallback(() => {
-      if(isAdmin) setIsPlaying(true)
-    }, [isAdmin]);
+    if (!isAdmin) return;
+    setIsPlaying(true);
+    if (socketRef.current) {
+      socketRef.current.emit('playback-control', { state: { isPlaying: true, time: currentTime } });
+    }
+  }, [isAdmin, currentTime]);
+
   const handlePause = useCallback(() => {
-    if(isAdmin) setIsPlaying(false)
-  }, [isAdmin]);
+    if (!isAdmin) return;
+    setIsPlaying(false);
+    if (socketRef.current) {
+      socketRef.current.emit('playback-control', { state: { isPlaying: false, time: currentTime } });
+    }
+  }, [isAdmin, currentTime]);
+
   const handleSeek = useCallback((time: number) => {
-    if(isAdmin) setCurrentTime(time)
-  }, [isAdmin]);
-  
+    if (!isAdmin) return;
+    setCurrentTime(time);
+    if (socketRef.current) {
+      socketRef.current.emit('playback-control', { state: { isPlaying, time } });
+    }
+  }, [isAdmin, isPlaying]);
+
   const handleTimeUpdate = useCallback((time: number) => {
-    // Only admin should be able to broadcast time updates
-     if(isAdmin) {
-        setCurrentTime(time)
-     }
-  }, [isAdmin]);
+    setCurrentTime(time);
+  }, []);
+  
   const handleDurationChange = useCallback((d: number) => setDuration(d), []);
 
   const handleSendMessage = (message: string) => {
-    const newMessage: ChatMessage = {
-      id: crypto.randomUUID(),
-      username: username,
-      message,
-      timestamp: Date.now(),
-      type: 'user',
-    };
-    setMessages(prev => [...prev, newMessage]);
+    if (socketRef.current) {
+      const newMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        username: username,
+        message,
+        timestamp: Date.now(),
+        type: 'user',
+      };
+      socketRef.current.emit('send-message', newMessage);
+    }
   };
   
   const videoTitle = initialVideoUrl.split('/').pop()?.replace(/[_\-]/g, ' ') || 'Video';
 
   if (!isClient) {
-    // Render a loading state or nothing on the server to avoid hydration mismatch
-    return (
-      <div className="flex h-screen bg-background" />
-    )
+    return <div className="flex h-screen bg-background" />;
   }
   
   const chatPanel = (
@@ -188,7 +240,6 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername, is
       )
   }
 
-  // Desktop layout
   return (
     <div className="flex h-screen bg-background">
         <main className="flex-1 flex flex-col justify-center items-center p-4 bg-black">
