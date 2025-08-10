@@ -8,8 +8,7 @@ import { Users, User, Link2 } from 'lucide-react';
 import type { ChatMessage, User as UserType } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { cn } from '@/lib/utils';
-
+import { Badge } from '@/components/ui/badge';
 
 type ChatPanelProps = {
   roomId: string;
@@ -17,6 +16,7 @@ type ChatPanelProps = {
   users: UserType[],
   messages: ChatMessage[],
   onSendMessage: (message: string) => void;
+  adminUsername?: string;
 };
 
 export default function ChatPanel({
@@ -25,6 +25,7 @@ export default function ChatPanel({
   users,
   messages,
   onSendMessage,
+  adminUsername,
 }: ChatPanelProps) {
   const [message, setMessage] = React.useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -100,11 +101,15 @@ export default function ChatPanel({
                         </div>
                     )
                   }
+                  const isAdmin = msg.username === adminUsername;
                   return (
                     <div key={msg.id} className="flex items-start gap-3 text-sm">
                         {renderUserAvatar(msg.username)}
                         <div>
-                            <span className="font-semibold text-muted-foreground pr-2">{msg.username}</span>
+                            <div className="flex items-center gap-2">
+                                <span className="font-semibold text-muted-foreground">{msg.username}</span>
+                                {isAdmin && <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">Admin</Badge>}
+                            </div>
                             <span className="leading-relaxed">{msg.message}</span>
                         </div>
                     </div>

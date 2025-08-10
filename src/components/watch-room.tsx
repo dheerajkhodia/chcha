@@ -6,9 +6,8 @@ import VideoPlayer from '@/components/video-player';
 import ChatPanel from '@/components/chat-panel';
 import { generateRandomName } from '@/lib/utils';
 import type { ChatMessage, User } from '@/types';
-import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { cn } from '@/lib/utils';
 
 type WatchRoomProps = {
   roomId: string;
@@ -132,6 +131,7 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername, is
       users={users}
       messages={messages}
       onSendMessage={handleSendMessage}
+      adminUsername={isAdmin ? username : undefined}
     />
   );
 
