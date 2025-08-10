@@ -24,6 +24,7 @@ type VideoPlayerProps = {
   isMobile: boolean;
   messages: ChatMessage[];
   showChatOverlay: boolean;
+  isAdmin: boolean;
 };
 
 export default function VideoPlayer({
@@ -40,6 +41,7 @@ export default function VideoPlayer({
   isMobile,
   messages,
   showChatOverlay,
+  isAdmin
 }: VideoPlayerProps) {
   const playerRef = useRef<ReactPlayer>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -71,7 +73,7 @@ export default function VideoPlayer({
 
   const handleContainerClick = () => {
     if (!hasStarted) {
-        if (!isPlaying) onPlay();
+        if (!isPlaying && isAdmin) onPlay();
         setHasStarted(true);
     } else {
         setShowControls(s => !s);
@@ -80,6 +82,7 @@ export default function VideoPlayer({
 
   const togglePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!isAdmin) return;
     isPlaying ? onPause() : onPlay();
   };
   
@@ -169,10 +172,10 @@ export default function VideoPlayer({
         onDuration={handleDuration}
         onPlay={() => {
             if(!hasStarted) setHasStarted(true);
-            if (!isPlaying) onPlay();
+            if (!isPlaying && isAdmin) onPlay();
         }}
         onPause={() => {
-            if (isPlaying) onPause()
+            if (isPlaying && isAdmin) onPause()
         }}
         onBuffer={() => setIsLoading(true)}
         onBufferEnd={() => setIsLoading(false)}
@@ -190,12 +193,13 @@ export default function VideoPlayer({
             <Button
                 variant="ghost"
                 size="icon"
-                className="w-20 h-20 text-white bg-black/50 hover:bg-black/70 rounded-full"
+                className="w-20 h-20 text-white bg-black/50 hover:bg-black/70 rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={(e) => {
                     e.stopPropagation();
                     if (!isPlaying) onPlay();
                     setHasStarted(true);
                 }}
+                disabled={!isAdmin}
             >
                 <Play size={48} className="ml-1" />
             </Button>
@@ -239,13 +243,14 @@ export default function VideoPlayer({
                 onValueChange={(value) => onSeek(value[0])}
                 onValueCommit={(value) => playerRef.current?.seekTo(value[0])}
                 className="w-full cursor-pointer"
+                disabled={!isAdmin}
             />
             <span className="text-sm font-mono w-14 text-center">{formatTime(duration)}</span>
         </div>
 
         <div className="flex items-center justify-between mt-2">
           <div className="flex items-center gap-1 sm:gap-2">
-            <Button variant="ghost" size="icon" onClick={togglePlay} className="hover:bg-white/10">
+            <Button variant="ghost" size="icon" onClick={togglePlay} className="hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed" disabled={!isAdmin}>
               {isPlaying ? <Pause size={24} /> : <Play size={24} />}
             </Button>
             <div className="flex items-center gap-2 w-28 sm:w-32">

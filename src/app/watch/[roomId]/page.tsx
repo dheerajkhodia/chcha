@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { JoinRoomForm } from '@/components/join-room-form';
 
 export const metadata: Metadata = {
   title: 'Watch Room | SynchWatch',
@@ -18,6 +19,7 @@ export default function WatchPage({ params, searchParams }: WatchPageProps) {
   const { roomId } = params;
   const videoUrl = searchParams.videoUrl as string;
   const username = searchParams.username as string;
+  const isAdmin = searchParams.admin === 'true';
 
   if (!videoUrl) {
     return (
@@ -43,5 +45,10 @@ export default function WatchPage({ params, searchParams }: WatchPageProps) {
     );
   }
 
-  return <WatchRoom roomId={roomId} initialVideoUrl={videoUrl} initialUsername={username} />;
+  // If the user is not the admin and hasn't provided a username, show the join form.
+  if (!isAdmin && !username) {
+    return <JoinRoomForm roomId={roomId} videoUrl={videoUrl} />;
+  }
+
+  return <WatchRoom roomId={roomId} initialVideoUrl={videoUrl} initialUsername={username} isAdmin={isAdmin} />;
 }

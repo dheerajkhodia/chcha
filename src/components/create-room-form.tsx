@@ -40,6 +40,8 @@ export function CreateRoomForm() {
     if (values.username) {
       params.set("username", values.username);
     }
+    // The creator of the room is the admin
+    params.set("admin", "true");
     router.push(`/watch/${roomId}?${params.toString()}`);
   }
 

@@ -14,9 +14,10 @@ type WatchRoomProps = {
   roomId: string;
   initialVideoUrl: string;
   initialUsername?: string;
+  isAdmin: boolean;
 };
 
-export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: WatchRoomProps) {
+export default function WatchRoom({ roomId, initialVideoUrl, initialUsername, isAdmin }: WatchRoomProps) {
   const [username, setUsername] = useState('');
   const [users, setUsers] = useState<User[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -48,19 +49,30 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
         type: 'system',
     }]);
 
-    // Simulate another user joining
-    setTimeout(() => {
-        const newUser: User = { id: 'user-2', username: generateRandomName() };
-        setUsers(prev => [...prev, newUser]);
-        const newMessage: ChatMessage = {
+    if (!isAdmin) {
+        const joinMessage: ChatMessage = {
             id: `system-${Date.now()}`,
             username: 'System',
-            message: `${newUser.username} joined`,
+            message: `${name} joined`,
             timestamp: Date.now(),
             type: 'system',
         };
-        setMessages(prev => [...prev, newMessage]);
-    }, 3000);
+        setMessages(prev => [...prev, joinMessage]);
+    } else {
+        // Simulate another user joining for the admin
+        setTimeout(() => {
+            const newUser: User = { id: 'user-2', username: generateRandomName() };
+            setUsers(prev => [...prev, newUser]);
+            const newMessage: ChatMessage = {
+                id: `system-${Date.now()}`,
+                username: 'System',
+                message: `${newUser.username} joined`,
+                timestamp: Date.now(),
+                type: 'system',
+            };
+            setMessages(prev => [...prev, newMessage]);
+        }, 3000);
+    }
 
 
     const handleFullScreenChange = () => {
@@ -76,13 +88,20 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
     document.addEventListener('fullscreenchange', handleFullScreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullScreenChange);
 
-  }, [roomId, initialUsername]);
+  }, [roomId, initialUsername, isAdmin]);
 
 
   // WebSocket event handlers (mocked)
-  const handlePlay = useCallback(() => setIsPlaying(true), []);
-  const handlePause = useCallback(() => setIsPlaying(false), []);
-  const handleSeek = useCallback((time: number) => setCurrentTime(time), []);
+  const handlePlay = useCallback(() => {
+      if(isAdmin) setIsPlaying(true)
+    }, [isAdmin]);
+  const handlePause = useCallback(() => {
+    if(isAdmin) setIsPlaying(false)
+  }, [isAdmin]);
+  const handleSeek = useCallback((time: number) => {
+    if(isAdmin) setCurrentTime(time)
+  }, [isAdmin]);
+  
   const handleTimeUpdate = useCallback((time: number) => setCurrentTime(time), []);
   const handleDurationChange = useCallback((d: number) => setDuration(d), []);
 
@@ -131,16 +150,22 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
         onToggleMobileChat={() => setShowChatOverlay(s => !s)}
         messages={messages}
         showChatOverlay={showChatOverlay}
+        isAdmin={isAdmin}
     />
   );
   
   if (isMobile) {
       if (isFullScreen) {
         return (
-          <div className="relative h-screen w-screen bg-background">
-            <main className="h-full w-full">
+          <div className="relative h-screen w-screen bg-black">
+            <main className="h-full w-full flex items-center justify-center">
               {renderVideoPlayer(true)}
             </main>
+            {showMobileChat && (
+              <div className="absolute inset-0 z-30 bg-black/50 p-4 flex flex-col">
+                  {chatPanel}
+              </div>
+            )}
           </div>
         )
       }
