@@ -125,13 +125,10 @@ export default function VideoPlayer({
     const handleFullScreenChange = () => {
         const isCurrentlyFullScreen = !!document.fullscreenElement;
         setIsFullScreen(isCurrentlyFullScreen);
-        if (!isCurrentlyFullScreen && !isPlayerExpanded) {
-            onToggleExpand();
-        }
     };
     document.addEventListener('fullscreenchange', handleFullScreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullScreenChange);
-  }, [isPlayerExpanded, onToggleExpand]);
+  }, []);
 
   const hideControls = () => {
     if (controlsTimeoutRef.current) {
@@ -257,6 +254,11 @@ export default function VideoPlayer({
             </div>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
+             {isFullScreen && (
+                <Button variant="ghost" size="icon" onClick={() => onToggleMobileChat()} className="hover:bg-transparent focus:bg-transparent active:bg-transparent">
+                  <MessageSquare />
+                </Button>
+              )}
              <Button variant="ghost" size="icon" onClick={toggleFullScreen} className="hover:bg-transparent focus:bg-transparent active:bg-transparent">
                 {isFullScreen ? <Minimize /> : <Maximize />}
               </Button>

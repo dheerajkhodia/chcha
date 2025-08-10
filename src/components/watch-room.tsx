@@ -26,6 +26,7 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
   const [isPlayerExpanded, setIsPlayerExpanded] = useState(false);
   const [showMobileChat, setShowMobileChat] = useState(true);
   const isMobile = useIsMobile();
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
 
   useEffect(() => {
@@ -42,6 +43,14 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
         message: `Welcome ${name}! You are in room ${roomId}.`,
         timestamp: Date.now(),
     }])
+
+    const handleFullScreenChange = () => {
+      setIsFullScreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullScreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullScreenChange);
+
   }, [roomId, initialUsername]);
 
 
@@ -82,6 +91,38 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
   
   const layout = (isMobileLayout: boolean) => {
       if(isMobileLayout) {
+          if (isFullScreen) {
+            return (
+              <div className="relative h-screen bg-background">
+                <main className="h-full w-full">
+                  <VideoPlayer
+                      isMobile={true}
+                      videoUrl={initialVideoUrl}
+                      isPlaying={isPlaying}
+                      currentTime={currentTime}
+                      duration={duration}
+                      onPlay={handlePlay}
+                      onPause={handlePause}
+                      onSeek={handleSeek}
+                      onTimeUpdate={handleTimeUpdate}
+                      onDurationChange={handleDurationChange}
+                      isPlayerExpanded={true}
+                      onToggleExpand={() => setIsPlayerExpanded(p => !p)}
+                      onToggleMobileChat={() => setShowMobileChat(s => !s)}
+                  />
+                </main>
+                <aside className={cn(
+                  "absolute inset-0 z-30 bg-black/50 transition-opacity",
+                  showMobileChat ? "opacity-100" : "opacity-0 pointer-events-none"
+                )}>
+                   <div className="h-full w-full max-w-sm ml-auto">
+                     {chatPanel}
+                   </div>
+                </aside>
+              </div>
+            )
+          }
+
           return (
              <div className="flex flex-col h-screen bg-background">
                 <main className={cn(
@@ -89,6 +130,7 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
                     isPlayerExpanded ? "flex-1" : "flex-shrink-0"
                     )}>
                     <VideoPlayer
+                        isMobile={true}
                         videoUrl={initialVideoUrl}
                         isPlaying={isPlaying}
                         currentTime={currentTime}
@@ -98,11 +140,12 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
                         onSeek={handleSeek}
                         onTimeUpdate={handleTimeUpdate}
                         onDurationChange={handleDurationChange}
-                        chatOverlayMessages={messages}
-                        isExpanded={isPlayerExpanded}
+                        isPlayerExpanded={isPlayerExpanded}
+                        onToggleExpand={() => setIsPlayerExpanded(p => !p)}
+                        onToggleMobileChat={() => setShowMobileChat(s => !s)}
                     />
                 </main>
-                {isMobile && !showMobileChat ? null : (
+                {isPlayerExpanded ? null : (
                     <aside className="flex-1 flex flex-col min-h-0">
                          {chatPanel}
                     </aside>
@@ -118,6 +161,7 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
                 isPlayerExpanded ? "w-full" : "w-1/2"
             )}>
                  <VideoPlayer
+                    isMobile={false}
                     videoUrl={initialVideoUrl}
                     isPlaying={isPlaying}
                     currentTime={currentTime}
@@ -127,8 +171,9 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
                     onSeek={handleSeek}
                     onTimeUpdate={handleTimeUpdate}
                     onDurationChange={handleDurationChange}
-                    chatOverlayMessages={messages}
-                    isExpanded={isPlayerExpanded}
+                    isPlayerExpanded={isPlayerExpanded}
+                    onToggleExpand={() => setIsPlayerExpanded(p => !p)}
+                    onToggleMobileChat={() => {}}
                 />
             </main>
             <aside className={cn(
