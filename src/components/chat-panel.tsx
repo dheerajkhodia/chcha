@@ -4,7 +4,7 @@ import React, { useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Users, User, Link2 } from 'lucide-react';
+import { Users, User, Link2, Crown } from 'lucide-react';
 import type { ChatMessage, User as UserType } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -74,8 +74,16 @@ export default function ChatPanel({
     <div className="flex flex-col h-full bg-card text-card-foreground border-l relative">
       {/* Header */}
       <div className="p-4 border-b">
-        <div className="flex justify-between items-center mb-2">
-            <h2 className="text-lg font-bold">Live Chat</h2>
+        <div className="flex justify-between items-start mb-2">
+            <div>
+              <h2 className="text-lg font-bold">Live Chat</h2>
+              {adminUsername && (
+                <div className="flex items-center gap-1.5 text-xs text-amber-500 mt-1">
+                  <Crown className="h-3.5 w-3.5" />
+                  <span>Admin: {adminUsername}</span>
+                </div>
+              )}
+            </div>
             <Button variant="ghost" size="sm" onClick={handleCopyLink}>
                 <Link2 className="mr-2 h-4 w-4" />
                 Invite
