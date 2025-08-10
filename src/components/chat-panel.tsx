@@ -4,7 +4,7 @@ import React, { useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Users, User } from 'lucide-react';
+import { Users, User, Link2 } from 'lucide-react';
 import type { ChatMessage, User as UserType } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -16,7 +16,6 @@ type ChatPanelProps = {
   users: UserType[],
   messages: ChatMessage[],
   onSendMessage: (message: string) => void;
-  onClose?: () => void;
 };
 
 export default function ChatPanel({
@@ -25,7 +24,6 @@ export default function ChatPanel({
   users,
   messages,
   onSendMessage,
-  onClose,
 }: ChatPanelProps) {
   const [message, setMessage] = React.useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -76,6 +74,10 @@ export default function ChatPanel({
       <div className="p-4 border-b">
         <div className="flex justify-between items-center mb-2">
             <h2 className="text-lg font-bold">Live Chat</h2>
+            <Button variant="ghost" size="sm" onClick={handleCopyLink}>
+                <Link2 className="mr-2 h-4 w-4" />
+                Invite
+            </Button>
         </div>
         <div className="flex items-center justify-end text-sm text-muted-foreground">
           <div className="flex items-center gap-1">
