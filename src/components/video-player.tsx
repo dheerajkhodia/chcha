@@ -251,7 +251,7 @@ export default function VideoPlayer({
              <Button variant="ghost" size="icon" onClick={handleToggleExpand} className="hover:bg-white/10">
               {isExpanded ? <Shrink /> : <Expand />}
             </Button>
-             <Button variant="ghost" size="icon" onClick={toggleFullScreen} className="hover:bg-white/10">
+             <Button variant="ghost" size="icon" onClick={toggleFullScreen} className="hover:bg-white/10 md:flex hidden">
               {isFullScreen ? <Minimize /> : <Maximize />}
             </Button>
           </div>
@@ -265,7 +265,7 @@ export default function VideoPlayer({
           showControls && hasStarted ? 'opacity-100' : 'opacity-0 pointer-events-none'
         )}
       >
-        {onToggleChat && isExpanded && (
+        {onToggleChat && (
           <Button variant="ghost" size="icon" onClick={onToggleChat} className="hover:bg-white/10 md:hidden">
             <MessageSquare />
           </Button>

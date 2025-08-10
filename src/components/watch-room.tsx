@@ -24,14 +24,12 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
   const [duration, setDuration] = useState(0);
   const [isClient, setIsClient] = useState(false);
   const [isPlayerExpanded, setIsPlayerExpanded] = useState(false);
+  const [showMobileChat, setShowMobileChat] = useState(true);
   const isMobile = useIsMobile();
 
 
   useEffect(() => {
-    // This effect runs once on the client after hydration
     setIsClient(true);
-    
-    // Set username
     const name = initialUsername || generateRandomName();
     setUsername(name);
     
@@ -67,7 +65,6 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
   const videoTitle = initialVideoUrl.split('/').pop()?.replace(/[\-_]/g, ' ') || 'Video';
 
   if (!isClient) {
-    // Render a loading state or null on the server to prevent hydration mismatch
     return (
       <div className="flex h-screen bg-background" />
     )
@@ -104,10 +101,12 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
                         chatOverlayMessages={messages}
                         isExpanded={isPlayerExpanded}
                         onToggleExpand={() => setIsPlayerExpanded(e => !e)}
+                        onToggleChat={() => setShowMobileChat(c => !c)}
                     />
                 </main>
-                <aside className={cn(
+                 <aside className={cn(
                     "flex-1 flex flex-col min-h-0",
+                     !showMobileChat && "hidden"
                 )}>
                     {chatPanel}
                 </aside>
