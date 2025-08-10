@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, RefreshCw } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, RefreshCw, MessageSquare } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { formatTime } from '@/lib/utils';
@@ -19,6 +19,8 @@ type VideoPlayerProps = {
   onTimeUpdate: (time: number) => void;
   onDurationChange: (duration: number) => void;
   chatOverlayMessages: ChatMessage[];
+  isChatOverlay: boolean;
+  onToggleChatOverlay: () => void;
 };
 
 export default function VideoPlayer({
@@ -31,7 +33,9 @@ export default function VideoPlayer({
   onSeek,
   onTimeUpdate,
   onDurationChange,
-  chatOverlayMessages
+  chatOverlayMessages,
+  isChatOverlay,
+  onToggleChatOverlay,
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -192,7 +196,10 @@ export default function VideoPlayer({
               <Slider value={[isMuted ? 0 : volume]} max={1} step={0.05} onValueChange={handleVolumeChange} />
             </div>
           </div>
-          <div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={onToggleChatOverlay} className={cn(isChatOverlay && "bg-accent/20 text-accent")}>
+              <MessageSquare />
+            </Button>
             <Button variant="ghost" size="icon" onClick={toggleFullScreen}>
               {isFullScreen ? <Minimize /> : <Maximize />}
             </Button>

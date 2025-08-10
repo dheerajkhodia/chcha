@@ -61,6 +61,10 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
   
   const videoTitle = initialVideoUrl.split('/').pop() || 'Video';
 
+  const handleToggleChatOverlay = useCallback(() => {
+    setIsChatOverlay(prev => !prev);
+  }, []);
+
   return (
     <div className="flex flex-col md:flex-row h-screen bg-black">
       <div className="flex-grow flex flex-col bg-black">
@@ -75,6 +79,8 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
           onTimeUpdate={handleTimeUpdate}
           onDurationChange={handleDurationChange}
           chatOverlayMessages={isChatOverlay ? messages : []}
+          isChatOverlay={isChatOverlay}
+          onToggleChatOverlay={handleToggleChatOverlay}
         />
       </div>
       <div className="w-full md:w-80 lg:w-96 bg-card flex flex-col h-1/2 md:h-full">
@@ -85,7 +91,7 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
           messages={messages}
           onSendMessage={handleSendMessage}
           isChatOverlay={isChatOverlay}
-          onToggleChatOverlay={() => setIsChatOverlay(prev => !prev)}
+          onToggleChatOverlay={handleToggleChatOverlay}
         />
       </div>
     </div>
