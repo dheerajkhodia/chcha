@@ -43,15 +43,17 @@ export default function VideoPlayer({
   const [isLoading, setIsLoading] = useState(true);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { isMobile, toggleSidebar, state: sidebarState } = useSidebar();
+  const [hasStarted, setHasStarted] = useState(false);
 
   useEffect(() => {
     if (!videoRef.current) return;
     if (isPlaying) {
+      if (!hasStarted) setHasStarted(true);
       videoRef.current.play().catch(e => console.error("Video play failed:", e));
     } else {
       videoRef.current.pause();
     }
-  }, [isPlaying]);
+  }, [isPlaying, hasStarted]);
 
   useEffect(() => {
     if (videoRef.current && Math.abs(videoRef.current.currentTime - currentTime) > 1) {
@@ -61,10 +63,17 @@ export default function VideoPlayer({
 
   const handleLoadedMetadata = () => {
     if (videoRef.current) onDurationChange(videoRef.current.duration);
+    setIsLoading(false);
   };
   
   const handleTimeUpdate = () => {
-    if (videoRef.current) onTimeUpdate(videoRef.current.currentTime);
+    if (videoRef.current) {
+        onTimeUpdate(videoRef.current.currentTime);
+        // Sometimes canplay isn't enough
+        if(isLoading && videoRef.current.readyState > 2) {
+            setIsLoading(false);
+        }
+    }
   };
 
   const togglePlay = useCallback(() => {
@@ -110,14 +119,17 @@ export default function VideoPlayer({
   const handleMouseMove = () => {
     setShowControls(true);
     if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-    controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 3000);
+    if(hasStarted) {
+        controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 3000);
+    }
   };
   
   const handleMouseLeave = () => {
-    if(isPlaying) setShowControls(false);
+    if(isPlaying && hasStarted) setShowControls(false);
   }
 
   const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!hasStarted) return;
     // Only toggle play if the click is on the container itself, not the controls
     if (e.target === containerRef.current || e.target === videoRef.current) {
       togglePlay();
@@ -138,14 +150,34 @@ export default function VideoPlayer({
         className="w-full h-full object-contain"
         onLoadedMetadata={handleLoadedMetadata}
         onTimeUpdate={handleTimeUpdate}
-        onPlay={() => !isPlaying && onPlay()}
+        onPlay={() => {
+            if (!isPlaying) onPlay();
+            setHasStarted(true);
+        }}
         onPause={() => isPlaying && onPause()}
         onWaiting={() => setIsLoading(true)}
         onPlaying={() => setIsLoading(false)}
+        onCanPlay={() => setIsLoading(false)}
         onDurationChange={() => videoRef.current && onDurationChange(videoRef.current.duration)}
         playsInline
       />
       
+      {!hasStarted && !isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center z-20">
+            <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onPlay();
+                }}
+                className="w-20 h-20 text-white bg-black/50 hover:bg-black/70 rounded-full"
+            >
+                <Play size={48} className="ml-1" />
+            </Button>
+        </div>
+      )}
+
       {isLoading && (
          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10 pointer-events-none">
             <RefreshCw className="w-12 h-12 text-white animate-spin" />
@@ -167,13 +199,13 @@ export default function VideoPlayer({
       <div
         className={cn(
           "absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent transition-opacity duration-300 pointer-events-none",
-          showControls ? "opacity-100" : "opacity-0"
+          showControls && hasStarted ? "opacity-100" : "opacity-0"
         )}
       />
       <div
         className={cn(
           "absolute inset-0 bg-gradient-to-b from-black/50 to-transparent transition-opacity duration-300 pointer-events-none",
-          showControls ? "opacity-100" : "opacity-0"
+          showControls && hasStarted ? "opacity-100" : "opacity-0"
         )}
       />
 
@@ -181,7 +213,7 @@ export default function VideoPlayer({
         onClick={(e) => e.stopPropagation()}
         className={cn(
           "absolute inset-x-0 bottom-0 p-3 sm:p-4 text-white z-20 transition-all duration-300",
-          showControls ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full pointer-events-none'
+          showControls && hasStarted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full pointer-events-none'
         )}
       >
         <div className="flex items-center gap-2 sm:gap-4">
@@ -218,7 +250,7 @@ export default function VideoPlayer({
         onClick={(e) => e.stopPropagation()}
         className={cn(
           "absolute inset-x-0 top-0 p-3 sm:p-4 text-white z-20 transition-all duration-300 flex justify-end",
-          showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          showControls && hasStarted ? 'opacity-100' : 'opacity-0 pointer-events-none'
         )}
       >
         <Button variant="ghost" size="icon" onClick={toggleSidebar} className="hover:bg-white/10">
