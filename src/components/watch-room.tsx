@@ -131,7 +131,7 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername, is
     return () => {
       if (timeUpdateIntervalRef.current) clearInterval(timeUpdateIntervalRef.current);
     }
-  }, [isAdmin, sendPlaybackState]);
+  }, [isAdmin, sendPlaybackState, isPlaying, currentTime]);
 
   const handlePlay = useCallback(() => {
     if (!isAdmin) return;

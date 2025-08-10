@@ -261,7 +261,7 @@ export default function VideoPlayer({
             </div>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
-             {isFullScreen && (
+             {isMobile && isFullScreen && (
                 <Button variant="ghost" size="icon" onClick={() => onToggleMobileChat()} className="text-white hover:bg-transparent focus:bg-transparent active:bg-transparent hover:text-white">
                   <MessageSquare />
                 </Button>

@@ -38,10 +38,12 @@ export default function ChatPanel({
     const inviteUrl = new URL(window.location.href);
     inviteUrl.searchParams.delete('username');
     inviteUrl.searchParams.delete('admin');
+    inviteUrl.searchParams.delete('adminName');
 
     // If the current user is the admin, add their name to the invite link
-    if(adminUsername && adminUsername === currentUsername) {
-        inviteUrl.searchParams.set('adminName', adminUsername);
+    const currentUserIsAdmin = users.find(u => u.username === currentUsername)?.isAdmin;
+    if(currentUserIsAdmin && currentUsername) {
+        inviteUrl.searchParams.set('adminName', currentUsername);
     }
     
 
