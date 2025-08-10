@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -24,13 +25,16 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
   const [duration, setDuration] = useState(0);
   const [isClient, setIsClient] = useState(false);
   const [isPlayerExpanded, setIsPlayerExpanded] = useState(false);
-  const [showMobileChat, setShowMobileChat] = useState(true);
+  const [showMobileChat, setShowMobileChat] = useState(false);
   const isMobile = useIsMobile();
   const [isFullScreen, setIsFullScreen] = useState(false);
 
 
   useEffect(() => {
+    // This effect runs once on the client after hydration
     setIsClient(true);
+    
+    // Logic that depends on browser APIs or random values
     const name = initialUsername || generateRandomName();
     setUsername(name);
     
@@ -46,6 +50,9 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
 
     const handleFullScreenChange = () => {
       setIsFullScreen(!!document.fullscreenElement);
+      if (!document.fullscreenElement) {
+        setShowMobileChat(false);
+      }
     };
 
     document.addEventListener('fullscreenchange', handleFullScreenChange);
@@ -74,6 +81,7 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
   const videoTitle = initialVideoUrl.split('/').pop()?.replace(/[\-_]/g, ' ') || 'Video';
 
   if (!isClient) {
+    // Render a loading state or nothing on the server to avoid hydration mismatch
     return (
       <div className="flex h-screen bg-background" />
     )
@@ -106,16 +114,16 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
                       onSeek={handleSeek}
                       onTimeUpdate={handleTimeUpdate}
                       onDurationChange={handleDurationChange}
-                      isPlayerExpanded={true}
+                      isPlayerExpanded={isPlayerExpanded}
                       onToggleExpand={() => setIsPlayerExpanded(p => !p)}
                       onToggleMobileChat={() => setShowMobileChat(s => !s)}
                   />
                 </main>
                 <aside className={cn(
-                  "absolute inset-0 z-30 bg-black/50 transition-opacity",
+                  "absolute inset-0 z-30 bg-black/60 backdrop-blur-sm transition-opacity",
                   showMobileChat ? "opacity-100" : "opacity-0 pointer-events-none"
                 )}>
-                   <div className="h-full w-full max-w-sm ml-auto">
+                   <div className="h-full w-full max-w-sm ml-auto bg-card/80">
                      {chatPanel}
                    </div>
                 </aside>
@@ -125,10 +133,7 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
 
           return (
              <div className="flex flex-col h-screen bg-background">
-                <main className={cn(
-                    "flex flex-col justify-start md:justify-center",
-                    isPlayerExpanded ? "flex-1" : "flex-shrink-0"
-                    )}>
+                <main className="w-full">
                     <VideoPlayer
                         isMobile={true}
                         videoUrl={initialVideoUrl}
@@ -140,25 +145,24 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
                         onSeek={handleSeek}
                         onTimeUpdate={handleTimeUpdate}
                         onDurationChange={handleDurationChange}
-                        isPlayerExpanded={isPlayerExpanded}
-                        onToggleExpand={() => setIsPlayerExpanded(p => !p)}
-                        onToggleMobileChat={() => setShowMobileChat(s => !s)}
+                        isPlayerExpanded={false} // Always minimized in portrait
+                        onToggleExpand={() => {}} // Does nothing in portrait
+                        onToggleMobileChat={() => {}}
                     />
                 </main>
-                {isPlayerExpanded ? null : (
-                    <aside className="flex-1 flex flex-col min-h-0">
-                         {chatPanel}
-                    </aside>
-                )}
+                <aside className="flex-1 flex flex-col min-h-0">
+                      {chatPanel}
+                </aside>
              </div>
           )
       }
 
+      // Desktop layout
       return (
         <div className="flex h-screen bg-background">
             <main className={cn(
                 "flex-1 flex flex-col justify-center transition-all duration-300",
-                isPlayerExpanded ? "w-full" : "w-1/2"
+                 isPlayerExpanded ? "w-full" : "w-[calc(100%-400px)]"
             )}>
                  <VideoPlayer
                     isMobile={false}
@@ -177,7 +181,7 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
                 />
             </main>
             <aside className={cn(
-                "w-1/2 flex-col min-h-0 transition-all duration-300 flex",
+                "flex-col min-h-0 transition-all duration-300 flex w-[400px]",
                 isPlayerExpanded ? "hidden" : "flex"
             )}>
                 {chatPanel}
