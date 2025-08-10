@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
+import ReactPlayer from 'react-player/lazy';
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, RefreshCw, MessageSquare, SidebarClose } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
@@ -34,50 +35,38 @@ export default function VideoPlayer({
   onDurationChange,
   chatOverlayMessages,
 }: VideoPlayerProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const playerRef = useRef<ReactPlayer>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [volume, setVolume] = useState(1);
+  
+  const [volume, setVolume] = useState(0.8);
   const [isMuted, setIsMuted] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
-  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const { isMobile, toggleSidebar, state: sidebarState } = useSidebar();
   const [hasStarted, setHasStarted] = useState(false);
+  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const { isMobile, toggleSidebar, state: sidebarState } = useSidebar();
 
   useEffect(() => {
-    if (!videoRef.current) return;
-    if (isPlaying) {
-      if (!hasStarted) setHasStarted(true);
-      videoRef.current.play().catch(e => console.error("Video play failed:", e));
-    } else {
-      videoRef.current.pause();
-    }
-  }, [isPlaying, hasStarted]);
-
-  useEffect(() => {
-    if (videoRef.current && Math.abs(videoRef.current.currentTime - currentTime) > 1) {
-      videoRef.current.currentTime = currentTime;
+    // Seek to the correct time if there's a significant difference
+    if (playerRef.current && Math.abs(playerRef.current.getCurrentTime() - currentTime) > 2) {
+      playerRef.current.seekTo(currentTime);
     }
   }, [currentTime]);
 
-  const handleLoadedMetadata = () => {
-    if (videoRef.current) onDurationChange(videoRef.current.duration);
-    setIsLoading(false);
+  const handleProgress = (state: { playedSeconds: number }) => {
+    onTimeUpdate(state.playedSeconds);
+    if(isLoading) setIsLoading(false);
   };
   
-  const handleTimeUpdate = () => {
-    if (videoRef.current) {
-        onTimeUpdate(videoRef.current.currentTime);
-        // Sometimes canplay isn't enough
-        if(isLoading && videoRef.current.readyState > 2) {
-            setIsLoading(false);
-        }
-    }
+  const handleDuration = (d: number) => {
+    onDurationChange(d);
   };
 
   const togglePlay = (e?: React.MouseEvent) => {
     e?.stopPropagation();
+    if (!hasStarted) setHasStarted(true);
     isPlaying ? onPause() : onPlay();
   };
   
@@ -85,24 +74,17 @@ export default function VideoPlayer({
     const newVolume = value[0];
     setVolume(newVolume);
     setIsMuted(newVolume === 0);
-    if(videoRef.current) videoRef.current.volume = newVolume;
   };
 
-  const toggleMute = () => {
-    if(isMuted) {
-      setIsMuted(false);
-      setVolume(0.5);
-      if(videoRef.current) videoRef.current.volume = 0.5;
-    } else {
-      setIsMuted(true);
-      setVolume(0);
-      if(videoRef.current) videoRef.current.volume = 0;
-    }
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsMuted(!isMuted);
   }
 
-  const toggleFullScreen = () => {
+  const toggleFullScreen = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!containerRef.current) return;
-    if (!document.fullscreenElement) {
+    if (!isFullScreen) {
       containerRef.current.requestFullscreen().catch(err => {
         alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
       });
@@ -116,59 +98,74 @@ export default function VideoPlayer({
     document.addEventListener('fullscreenchange', handleFullScreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullScreenChange);
   }, []);
+
+  const hideControls = () => {
+    if (controlsTimeoutRef.current) {
+        clearTimeout(controlsTimeoutRef.current);
+    }
+    controlsTimeoutRef.current = setTimeout(() => {
+        if(isPlaying && hasStarted) {
+            setShowControls(false)
+        }
+    }, 3000);
+  }
   
-  const handleMouseMove = () => {
+  const handlePointerMove = () => {
     setShowControls(true);
-    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-    if(hasStarted) {
-        controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 3000);
+    hideControls();
+  };
+  
+  const handleContainerClick = () => {
+    if (hasStarted) {
+        togglePlay();
     }
   };
   
-  const handleMouseLeave = () => {
-    if(isPlaying && hasStarted) setShowControls(false);
+  const handleWrapperClick = () => {
+      if(!isMobile) {
+          setShowControls(s => !s);
+      }
   }
-
-  const handleContainerClick = () => {
-    if (!hasStarted) return;
-    setShowControls(prev => !prev);
-  };
 
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full bg-black flex items-center justify-center overflow-hidden group"
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      onClick={handleContainerClick}
+      className="relative w-full h-full bg-black flex items-center justify-center overflow-hidden"
+      onPointerMove={handlePointerMove}
+      onClick={handleWrapperClick}
     >
-      <video
-        ref={videoRef}
-        src={videoUrl}
-        className="w-full h-full object-contain"
-        onLoadedMetadata={handleLoadedMetadata}
-        onTimeUpdate={handleTimeUpdate}
+      <ReactPlayer
+        ref={playerRef}
+        url={videoUrl}
+        width="100%"
+        height="100%"
+        playing={isPlaying}
+        volume={volume}
+        muted={isMuted}
+        controls={false}
+        onProgress={handleProgress}
+        onDuration={handleDuration}
         onPlay={() => {
+            if(!hasStarted) setHasStarted(true);
             if (!isPlaying) onPlay();
-            setHasStarted(true);
         }}
-        onPause={() => isPlaying && onPause()}
-        onWaiting={() => setIsLoading(true)}
-        onPlaying={() => setIsLoading(false)}
-        onCanPlay={() => setIsLoading(false)}
-        onDurationChange={() => videoRef.current && onDurationChange(videoRef.current.duration)}
+        onPause={() => {
+            if (isPlaying) onPause()
+        }}
+        onBuffer={() => setIsLoading(true)}
+        onBufferEnd={() => setIsLoading(false)}
+        onReady={() => setIsLoading(false)}
         playsInline
+        config={{ file: { attributes: { 
+            style: { width: '100%', height: '100%', objectFit: 'contain' }
+        }}}}
       />
       
       {!hasStarted && !isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center z-20">
+        <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/40" onClick={togglePlay}>
             <Button
                 variant="ghost"
                 size="icon"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onPlay();
-                }}
                 className="w-20 h-20 text-white bg-black/50 hover:bg-black/70 rounded-full"
             >
                 <Play size={48} className="ml-1" />
@@ -176,8 +173,8 @@ export default function VideoPlayer({
         </div>
       )}
 
-      {isLoading && (
-         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10 pointer-events-none">
+      {isLoading && hasStarted && (
+         <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10 pointer-events-none">
             <RefreshCw className="w-12 h-12 text-white animate-spin" />
         </div>
       )}
@@ -194,9 +191,10 @@ export default function VideoPlayer({
         </div>
       )}
 
+      {/* Gradients */}
       <div
         className={cn(
-          "absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent transition-opacity duration-300 pointer-events-none",
+          "absolute inset-0 bg-gradient-to-t from-black/70 to-transparent transition-opacity duration-300 pointer-events-none",
           showControls && hasStarted ? "opacity-100" : "opacity-0"
         )}
       />
@@ -207,6 +205,7 @@ export default function VideoPlayer({
         )}
       />
 
+      {/* Controls */}
       <div
         onClick={(e) => e.stopPropagation()}
         className={cn(
@@ -220,6 +219,7 @@ export default function VideoPlayer({
             value={[currentTime]}
             max={duration || 100}
             onValueChange={(value) => onSeek(value[0])}
+            onValueCommit={(value) => playerRef.current?.seekTo(value[0])}
             className="w-full cursor-pointer"
           />
           <span className="text-sm font-mono w-14 text-center">{formatTime(duration)}</span>
@@ -244,6 +244,8 @@ export default function VideoPlayer({
           </div>
         </div>
       </div>
+
+       {/* Top Controls */}
        <div
         onClick={(e) => e.stopPropagation()}
         className={cn(
