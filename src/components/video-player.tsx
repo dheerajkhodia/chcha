@@ -76,9 +76,10 @@ export default function VideoPlayer({
     }
   };
 
-  const togglePlay = useCallback(() => {
+  const togglePlay = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     isPlaying ? onPause() : onPlay();
-  }, [isPlaying, onPause, onPlay]);
+  };
   
   const handleVolumeChange = (value: number[]) => {
     const newVolume = value[0];
@@ -128,12 +129,9 @@ export default function VideoPlayer({
     if(isPlaying && hasStarted) setShowControls(false);
   }
 
-  const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleContainerClick = () => {
     if (!hasStarted) return;
-    // Only toggle play if the click is on the container itself, not the controls
-    if (e.target === containerRef.current || e.target === videoRef.current) {
-      togglePlay();
-    }
+    setShowControls(prev => !prev);
   };
 
   return (
