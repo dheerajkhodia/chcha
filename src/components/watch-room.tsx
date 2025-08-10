@@ -6,6 +6,8 @@ import ChatPanel from '@/components/chat-panel';
 import { generateRandomName } from '@/lib/utils';
 import type { ChatMessage, User } from '@/types';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
+
 
 type WatchRoomProps = {
   roomId: string;
@@ -20,7 +22,8 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isChatVisible, setIsChatVisible] = useState(false);
+  const isMobile = useIsMobile();
+
 
   useEffect(() => {
     const name = initialUsername || generateRandomName();
@@ -57,13 +60,40 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
   };
   
   const videoTitle = initialVideoUrl.split('/').pop()?.replace(/[\-_]/g, ' ') || 'Video';
-  
-  const toggleChat = () => setIsChatVisible(v => !v);
+
+  if (isMobile) {
+    return (
+        <div className="flex flex-col h-screen bg-background">
+            <main className="flex flex-col">
+                <VideoPlayer
+                    videoUrl={initialVideoUrl}
+                    isPlaying={isPlaying}
+                    currentTime={currentTime}
+                    duration={duration}
+                    onPlay={handlePlay}
+                    onPause={handlePause}
+                    onSeek={handleSeek}
+                    onTimeUpdate={handleTimeUpdate}
+                    onDurationChange={handleDurationChange}
+                    chatOverlayMessages={[]}
+                />
+            </main>
+             <div className="flex-1 min-h-0">
+                <ChatPanel
+                    roomId={roomId}
+                    videoTitle={videoTitle}
+                    users={users}
+                    messages={messages}
+                    onSendMessage={handleSendMessage}
+                />
+            </div>
+        </div>
+    )
+  }
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-background">
-      {/* Main Content (Video) */}
-      <main className="flex-1 flex flex-col">
+    <div className="flex flex-row h-screen bg-background">
+      <main className="flex-1 flex flex-col justify-center">
         <VideoPlayer
             videoUrl={initialVideoUrl}
             isPlaying={isPlaying}
@@ -75,25 +105,9 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
             onTimeUpdate={handleTimeUpdate}
             onDurationChange={handleDurationChange}
             chatOverlayMessages={[]}
-            onToggleChat={toggleChat}
         />
-        {/* Mobile Chat View (Stacked) */}
-        <div className="md:hidden flex-1 min-h-0">
-             <ChatPanel
-                roomId={roomId}
-                videoTitle={videoTitle}
-                users={users}
-                messages={messages}
-                onSendMessage={handleSendMessage}
-            />
-        </div>
       </main>
-
-      {/* Desktop Chat Panel (Sidebar) */}
-      <aside className={cn(
-          "w-full md:w-80 lg:w-96 flex-shrink-0 h-full",
-          "hidden md:flex" // Always visible on desktop
-      )}>
+      <aside className="w-80 lg:w-96 flex-shrink-0 h-full">
         <ChatPanel
             roomId={roomId}
             videoTitle={videoTitle}
