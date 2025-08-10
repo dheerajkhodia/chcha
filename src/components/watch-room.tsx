@@ -24,11 +24,10 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isClient, setIsClient] = useState(false);
-  const [isPlayerExpanded, setIsPlayerExpanded] = useState(false);
   const [showMobileChat, setShowMobileChat] = useState(false);
   const isMobile = useIsMobile();
   const [isFullScreen, setIsFullScreen] = useState(false);
-
+  const [showChatOverlay, setShowChatOverlay] = useState(true);
 
   useEffect(() => {
     // This effect runs once on the client after hydration
@@ -54,11 +53,6 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
       // When exiting fullscreen, always hide the mobile chat overlay
       if (!isFs) {
         setShowMobileChat(false);
-        // Also ensure player goes back to minimized state if it was expanded
-        setIsPlayerExpanded(false);
-      } else {
-        // When entering fullscreen, expand the player
-        setIsPlayerExpanded(true);
       }
     };
     
@@ -86,7 +80,7 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
     setMessages(prev => [...prev, newMessage]);
   };
   
-  const videoTitle = initialVideoUrl.split('/').pop()?.replace(/[\-_]/g, ' ') || 'Video';
+  const videoTitle = initialVideoUrl.split('/').pop()?.replace(/[_\-]/g, ' ') || 'Video';
 
   if (!isClient) {
     // Render a loading state or nothing on the server to avoid hydration mismatch
@@ -96,115 +90,64 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
   }
   
   const chatPanel = (
-      <ChatPanel
-        isMobile={!!isMobile}
-        roomId={roomId}
-        videoTitle={videoTitle}
-        users={users}
+    <ChatPanel
+      roomId={roomId}
+      videoTitle={videoTitle}
+      users={users}
+      messages={messages}
+      onSendMessage={handleSendMessage}
+    />
+  );
+
+  const renderVideoPlayer = (isMobilePlayer: boolean) => (
+    <VideoPlayer
+        isMobile={isMobilePlayer}
+        videoUrl={initialVideoUrl}
+        isPlaying={isPlaying}
+        currentTime={currentTime}
+        duration={duration}
+        onPlay={handlePlay}
+        onPause={handlePause}
+        onSeek={handleSeek}
+        onTimeUpdate={handleTimeUpdate}
+        onDurationChange={handleDurationChange}
+        onToggleMobileChat={() => setShowChatOverlay(s => !s)}
         messages={messages}
-        onSendMessage={handleSendMessage}
+        showChatOverlay={showChatOverlay}
     />
   );
   
-  const layout = (isMobileLayout: boolean) => {
-      if(isMobileLayout) {
-          if (isFullScreen) {
-            return (
-              <div className="relative h-screen bg-background">
-                <main className="h-full w-full">
-                  <VideoPlayer
-                      isMobile={true}
-                      videoUrl={initialVideoUrl}
-                      isPlaying={isPlaying}
-                      currentTime={currentTime}
-                      duration={duration}
-                      onPlay={handlePlay}
-                      onPause={handlePause}
-                      onSeek={handleSeek}
-                      onTimeUpdate={handleTimeUpdate}
-                      onDurationChange={handleDurationChange}
-                      isPlayerExpanded={true}
-                      onToggleExpand={() => {}}
-                      onToggleMobileChat={() => setShowMobileChat(s => !s)}
-                      messages={messages}
-                  />
-                </main>
-                <aside className={cn(
-                  "absolute inset-0 z-30 bg-black/60 backdrop-blur-sm transition-opacity",
-                  showMobileChat ? "opacity-100" : "opacity-0 pointer-events-none"
-                )}>
-                   <div className="h-full w-full max-w-sm ml-auto bg-card/80">
-                     {chatPanel}
-                   </div>
-                </aside>
-              </div>
-            )
-          }
-
-          // Mobile portrait view
-          return (
-             <div className="flex flex-col h-screen bg-background">
-                <main className="w-full">
-                    <VideoPlayer
-                        isMobile={true}
-                        videoUrl={initialVideoUrl}
-                        isPlaying={isPlaying}
-                        currentTime={currentTime}
-                        duration={duration}
-                        onPlay={handlePlay}
-                        onPause={handlePause}
-                        onSeek={handleSeek}
-                        onTimeUpdate={handleTimeUpdate}
-                        onDurationChange={handleDurationChange}
-                        isPlayerExpanded={isPlayerExpanded}
-                        onToggleExpand={() => setIsPlayerExpanded(p => !p)}
-                        onToggleMobileChat={() => {}}
-                        messages={messages}
-                    />
-                </main>
-                <aside className={cn(
-                  "flex-1 flex flex-col min-h-0",
-                   isPlayerExpanded ? "hidden" : "flex"
-                )}>
-                    {chatPanel}
-                </aside>
-             </div>
-          )
-      }
-
-      // Desktop layout
-      return (
-        <div className="flex h-screen bg-background">
-            <main className={cn(
-                "flex-1 flex flex-col justify-center transition-all duration-300",
-                 isPlayerExpanded ? "w-full" : "w-[calc(100%-400px)]"
-            )}>
-                 <VideoPlayer
-                    isMobile={false}
-                    videoUrl={initialVideoUrl}
-                    isPlaying={isPlaying}
-                    currentTime={currentTime}
-                    duration={duration}
-                    onPlay={handlePlay}
-                    onPause={handlePause}
-                    onSeek={handleSeek}
-                    onTimeUpdate={handleTimeUpdate}
-                    onDurationChange={handleDurationChange}
-                    isPlayerExpanded={isPlayerExpanded}
-                    onToggleExpand={() => setIsPlayerExpanded(p => !p)}
-                    onToggleMobileChat={() => {}}
-                    messages={messages}
-                />
+  if (isMobile) {
+      if (isFullScreen) {
+        return (
+          <div className="relative h-screen w-screen bg-background">
+            <main className="h-full w-full">
+              {renderVideoPlayer(true)}
             </main>
-            <aside className={cn(
-                "flex-col min-h-0 transition-all duration-300 flex w-[400px]",
-                isPlayerExpanded ? "hidden" : "flex"
-            )}>
+          </div>
+        )
+      }
+      return (
+         <div className="flex flex-col h-screen bg-background">
+            <main className="w-full">
+                {renderVideoPlayer(true)}
+            </main>
+            <aside className="flex-1 flex flex-col min-h-0">
                 {chatPanel}
             </aside>
-        </div>
+         </div>
       )
   }
-  
-  return layout(!!isMobile);
+
+  // Desktop layout
+  return (
+    <div className="flex h-screen bg-background">
+        <main className="flex-1 flex flex-col justify-center items-center p-4 bg-black">
+             {renderVideoPlayer(false)}
+        </main>
+        <aside className="flex-col min-h-0 transition-all duration-300 flex w-[400px]">
+            {chatPanel}
+        </aside>
+    </div>
+  )
 }

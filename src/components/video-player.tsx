@@ -20,11 +20,10 @@ type VideoPlayerProps = {
   onSeek: (time: number) => void;
   onTimeUpdate: (time: number) => void;
   onDurationChange: (duration: number) => void;
-  isPlayerExpanded: boolean;
-  onToggleExpand: () => void;
   onToggleMobileChat: () => void;
   isMobile: boolean;
   messages: ChatMessage[];
+  showChatOverlay: boolean;
 };
 
 export default function VideoPlayer({
@@ -37,11 +36,10 @@ export default function VideoPlayer({
   onSeek,
   onTimeUpdate,
   onDurationChange,
-  isPlayerExpanded,
-  onToggleExpand,
   onToggleMobileChat,
   isMobile,
-  messages
+  messages,
+  showChatOverlay,
 }: VideoPlayerProps) {
   const playerRef = useRef<ReactPlayer>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -153,8 +151,7 @@ export default function VideoPlayer({
     <div
       ref={containerRef}
       className={cn(
-        "relative w-full bg-black flex items-center justify-center overflow-hidden",
-        isPlayerExpanded ? "h-full" : "aspect-video",
+        "relative w-full bg-black flex items-center justify-center overflow-hidden aspect-video",
       )}
       onPointerMove={handlePointerMove}
       onClick={handleContainerClick}
@@ -186,7 +183,7 @@ export default function VideoPlayer({
         }}}}
       />
 
-      <ChatOverlay messages={messages} />
+      {showChatOverlay && <ChatOverlay messages={messages} />}
       
       {!hasStarted && !isLoading && (
         <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/40" >
