@@ -7,6 +7,7 @@ import { generateRandomName } from '@/lib/utils';
 import type { ChatMessage, User } from '@/types';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { SheetTitle } from '@/components/ui/sheet';
 
 type WatchRoomProps = {
   roomId: string;
@@ -23,6 +24,7 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
   const [duration, setDuration] = useState(0);
   const [isClient, setIsClient] = useState(false);
   const [showChat, setShowChat] = useState(true);
+  const [isPlayerExpanded, setIsPlayerExpanded] = useState(false);
   const isMobile = useIsMobile();
 
 
@@ -48,9 +50,9 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
   useEffect(() => {
       // This effect runs when isMobile changes or after the initial client render
       if (isClient) {
-          setShowChat(!isMobile);
+          setShowChat(!isMobile || !isPlayerExpanded);
       }
-  }, [isMobile, isClient]);
+  }, [isMobile, isClient, isPlayerExpanded]);
 
 
   // WebSocket event handlers (mocked)
@@ -74,13 +76,23 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
 
   if (!isClient) {
     // Render a loading state or null on the server to prevent hydration mismatch
-    return null; 
+    return (
+      <div className="flex h-screen bg-background">
+          <SheetTitle className="sr-only">SynchWatch Room</SheetTitle>
+      </div>
+    )
   }
 
   // Using Tailwind CSS classes for responsive layout
   return (
-    <div className={cn("flex h-screen bg-background", isMobile ? "flex-col" : "flex-row")}>
-      <main className="flex-1 flex flex-col justify-start md:justify-center">
+    <div className={cn(
+      "flex h-screen bg-background", 
+      isPlayerExpanded && isMobile ? "flex-col" : "flex-col-reverse md:flex-row"
+    )}>
+      <main className={cn(
+        "flex flex-col justify-start md:justify-center",
+        isPlayerExpanded ? "flex-1" : "flex-shrink-0"
+        )}>
         <VideoPlayer
             videoUrl={initialVideoUrl}
             isPlaying={isPlaying}
@@ -93,12 +105,14 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
             onDurationChange={handleDurationChange}
             chatOverlayMessages={messages}
             onToggleChat={() => setShowChat(s => !s)}
+            isExpanded={isPlayerExpanded}
+            onToggleExpand={() => setIsPlayerExpanded(e => !e)}
         />
       </main>
       <aside className={cn(
         "flex-shrink-0 flex flex-col",
         isMobile ? "w-full flex-1 min-h-0" : "w-80 lg:w-96 h-full",
-        isMobile && !showChat ? "hidden" : ""
+        isMobile && !showChat ? "hidden" : "flex"
       )}>
         <ChatPanel
             roomId={roomId}
