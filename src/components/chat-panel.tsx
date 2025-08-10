@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import ContentRecommendation from '@/components/content-recommendation';
-import { Send, Users, MessageSquare, Tv } from 'lucide-react';
+import { Send, Users, MessageSquare, Tv, Clipboard } from 'lucide-react';
 import type { ChatMessage, User } from '@/types';
 import {
   Accordion,
@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/accordion"
 import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 type ChatPanelProps = {
   roomId: string;
@@ -40,6 +41,23 @@ export default function ChatPanel({
 }: ChatPanelProps) {
   const [message, setMessage] = useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      toast({
+        title: "Invite Link Copied",
+        description: "The room link is on your clipboard.",
+      });
+    }).catch(err => {
+      console.error('Failed to copy link: ', err);
+      toast({
+        variant: "destructive",
+        title: "Copy Failed",
+        description: "Could not copy the invite link to your clipboard.",
+      });
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,7 +81,13 @@ export default function ChatPanel({
         <h2 className="text-xl font-bold font-headline text-primary truncate" title={videoTitle}>
           {videoTitle}
         </h2>
-        <Badge variant="secondary" className="mt-1">Room ID: {roomId}</Badge>
+        <div className="flex items-center gap-2 mt-1">
+          <Badge variant="secondary">Room ID: {roomId}</Badge>
+          <Button variant="ghost" size="sm" onClick={handleCopyLink} className="h-auto px-2 py-1">
+            <Clipboard className="h-4 w-4 mr-1" />
+            Copy Invite Link
+          </Button>
+        </div>
       </div>
 
       <ScrollArea className="flex-grow" ref={scrollAreaRef}>
