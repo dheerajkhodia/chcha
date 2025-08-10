@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "npm-run-all --parallel dev:next dev:server",
-    "dev:next": "next dev --turbopack -p 9002",
+    "dev:next": "next dev --turbopack --port 9002",
     "dev:server": "node server.js",
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
