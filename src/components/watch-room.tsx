@@ -61,38 +61,9 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
   
   const videoTitle = initialVideoUrl.split('/').pop()?.replace(/[\-_]/g, ' ') || 'Video';
 
-  if (isMobile) {
-    return (
-        <div className="flex flex-col h-screen bg-background">
-            <main className="flex flex-col">
-                <VideoPlayer
-                    videoUrl={initialVideoUrl}
-                    isPlaying={isPlaying}
-                    currentTime={currentTime}
-                    duration={duration}
-                    onPlay={handlePlay}
-                    onPause={handlePause}
-                    onSeek={handleSeek}
-                    onTimeUpdate={handleTimeUpdate}
-                    onDurationChange={handleDurationChange}
-                    chatOverlayMessages={[]}
-                />
-            </main>
-             <div className="flex-1 min-h-0">
-                <ChatPanel
-                    roomId={roomId}
-                    videoTitle={videoTitle}
-                    users={users}
-                    messages={messages}
-                    onSendMessage={handleSendMessage}
-                />
-            </div>
-        </div>
-    )
-  }
-
+  // Using Tailwind CSS classes for responsive layout
   return (
-    <div className="flex flex-row h-screen bg-background">
+    <div className="flex flex-col md:flex-row h-screen bg-background">
       <main className="flex-1 flex flex-col justify-center">
         <VideoPlayer
             videoUrl={initialVideoUrl}
@@ -107,7 +78,7 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
             chatOverlayMessages={[]}
         />
       </main>
-      <aside className="w-80 lg:w-96 flex-shrink-0 h-full">
+      <aside className="w-full md:w-80 lg:w-96 flex-shrink-0 h-full flex flex-col">
         <ChatPanel
             roomId={roomId}
             videoTitle={videoTitle}
