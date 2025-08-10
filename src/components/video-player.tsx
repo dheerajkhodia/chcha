@@ -2,13 +2,12 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import ReactPlayer from 'react-player/lazy';
-import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, RefreshCw, MessageSquare, SidebarClose } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, RefreshCw, MessageSquare } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { formatTime } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import type { ChatMessage } from '@/types';
-import { useSidebar } from '@/components/ui/sidebar';
 
 type VideoPlayerProps = {
   videoUrl: string;
@@ -21,6 +20,7 @@ type VideoPlayerProps = {
   onTimeUpdate: (time: number) => void;
   onDurationChange: (duration: number) => void;
   chatOverlayMessages: ChatMessage[];
+  onToggleChat?: () => void;
 };
 
 export default function VideoPlayer({
@@ -34,6 +34,7 @@ export default function VideoPlayer({
   onTimeUpdate,
   onDurationChange,
   chatOverlayMessages,
+  onToggleChat
 }: VideoPlayerProps) {
   const playerRef = useRef<ReactPlayer>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -46,7 +47,6 @@ export default function VideoPlayer({
   const [hasStarted, setHasStarted] = useState(false);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { isMobile, toggleSidebar, state: sidebarState } = useSidebar();
 
   useEffect(() => {
     // Seek to the correct time if there's a significant difference
@@ -57,16 +57,24 @@ export default function VideoPlayer({
 
   const handleProgress = (state: { playedSeconds: number }) => {
     onTimeUpdate(state.playedSeconds);
-    if(isLoading) setIsLoading(false);
+    if(isLoading && isPlaying) setIsLoading(false);
   };
   
   const handleDuration = (d: number) => {
     onDurationChange(d);
   };
 
-  const togglePlay = (e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    if (!hasStarted) setHasStarted(true);
+  const handleContainerClick = () => {
+    if (!hasStarted) {
+        if (!isPlaying) onPlay();
+        setHasStarted(true);
+    } else {
+        setShowControls(s => !s);
+    }
+  };
+
+  const togglePlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
     isPlaying ? onPause() : onPlay();
   };
   
@@ -115,24 +123,12 @@ export default function VideoPlayer({
     hideControls();
   };
   
-  const handleContainerClick = () => {
-    if (hasStarted) {
-        togglePlay();
-    }
-  };
-  
-  const handleWrapperClick = () => {
-      if(!isMobile) {
-          setShowControls(s => !s);
-      }
-  }
-
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full bg-black flex items-center justify-center overflow-hidden"
+      className="relative w-full h-full bg-black flex items-center justify-center overflow-hidden aspect-video"
       onPointerMove={handlePointerMove}
-      onClick={handleWrapperClick}
+      onClick={handleContainerClick}
     >
       <ReactPlayer
         ref={playerRef}
@@ -162,7 +158,7 @@ export default function VideoPlayer({
       />
       
       {!hasStarted && !isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/40" onClick={togglePlay}>
+        <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/40" >
             <Button
                 variant="ghost"
                 size="icon"
@@ -173,7 +169,7 @@ export default function VideoPlayer({
         </div>
       )}
 
-      {isLoading && hasStarted && (
+      {isLoading && (
          <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10 pointer-events-none">
             <RefreshCw className="w-12 h-12 text-white animate-spin" />
         </div>
@@ -198,7 +194,7 @@ export default function VideoPlayer({
           showControls && hasStarted ? "opacity-100" : "opacity-0"
         )}
       />
-      <div
+       <div
         className={cn(
           "absolute inset-0 bg-gradient-to-b from-black/50 to-transparent transition-opacity duration-300 pointer-events-none",
           showControls && hasStarted ? "opacity-100" : "opacity-0"
@@ -244,7 +240,6 @@ export default function VideoPlayer({
           </div>
         </div>
       </div>
-
        {/* Top Controls */}
        <div
         onClick={(e) => e.stopPropagation()}
@@ -253,9 +248,11 @@ export default function VideoPlayer({
           showControls && hasStarted ? 'opacity-100' : 'opacity-0 pointer-events-none'
         )}
       >
-        <Button variant="ghost" size="icon" onClick={toggleSidebar} className="hover:bg-white/10">
-          {(isMobile || sidebarState === 'expanded') ? <MessageSquare /> : <SidebarClose />}
-        </Button>
+        {onToggleChat && (
+          <Button variant="ghost" size="icon" onClick={onToggleChat} className="hover:bg-white/10 md:hidden">
+            <MessageSquare />
+          </Button>
+        )}
       </div>
     </div>
   );
