@@ -32,7 +32,12 @@ export default function ChatPanel({
   const { toast } = useToast();
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href).then(() => {
+    // Construct the base URL without admin or username params
+    const inviteUrl = new URL(window.location.href);
+    inviteUrl.searchParams.delete('username');
+    inviteUrl.searchParams.delete('admin');
+
+    navigator.clipboard.writeText(inviteUrl.toString()).then(() => {
       toast({
         title: "Invite Link Copied",
         description: "The room link is on your clipboard.",
@@ -109,14 +114,14 @@ export default function ChatPanel({
                         </div>
                     )
                   }
-                  const isAdmin = msg.username === adminUsername;
+                  const isAdminMsg = msg.username === adminUsername;
                   return (
                     <div key={msg.id} className="flex items-start gap-3 text-sm">
                         {renderUserAvatar(msg.username)}
                         <div>
                             <div className="flex items-center gap-2">
                                 <span className="font-semibold text-muted-foreground">{msg.username}</span>
-                                {isAdmin && <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">Admin</Badge>}
+                                {isAdminMsg && <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">Admin</Badge>}
                             </div>
                             <span className="leading-relaxed">{msg.message}</span>
                         </div>
