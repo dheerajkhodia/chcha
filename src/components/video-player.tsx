@@ -176,7 +176,7 @@ export default function VideoPlayer({
       )}
 
       {chatOverlayMessages.length > 0 && (
-        <div className="absolute bottom-24 left-4 right-4 z-20 pointer-events-none">
+        <div className="absolute bottom-24 left-4 right-4 z-20 pointer-events-none md:hidden">
           <div className="max-h-60 overflow-y-auto pr-4">
           {chatOverlayMessages.slice(-5).map((msg) => (
             <p key={msg.id} className="text-white p-1 text-lg" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.8)'}}>
