@@ -8,6 +8,7 @@ import { Users, X, User, SlidersHorizontal, ShoppingBag, Scissors, Smile, Dollar
 import type { ChatMessage, User as UserType } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { SheetTitle } from '@/components/ui/sheet';
 
 
 type ChatPanelProps = {
@@ -89,6 +90,7 @@ export default function ChatPanel({
 
   return (
     <div className="flex flex-col h-full bg-card text-card-foreground border-l relative">
+      <SheetTitle className="sr-only">Chat Panel</SheetTitle>
       {/* Header */}
       <div className="p-4 border-b">
         <div className="flex justify-between items-center mb-2">

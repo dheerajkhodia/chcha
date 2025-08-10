@@ -77,9 +77,7 @@ export default function WatchRoom({ roomId, initialVideoUrl, initialUsername }: 
   if (!isClient) {
     // Render a loading state or null on the server to prevent hydration mismatch
     return (
-      <div className="flex h-screen bg-background">
-          <SheetTitle className="sr-only">SynchWatch Room</SheetTitle>
-      </div>
+      <div className="flex h-screen bg-background" />
     )
   }
 
