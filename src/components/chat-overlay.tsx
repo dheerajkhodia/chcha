@@ -45,8 +45,8 @@ export default function ChatOverlay({ messages }: ChatOverlayProps) {
               className="text-white text-sm"
               style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.8)' }}
             >
-              <span className="font-bold pr-2" style={{ color: '#A9A9A9' }}>{msg.username}:</span>
-              <span style={{ color: '#E0E0E0' }}>{msg.message}</span>
+              <span className="font-bold pr-2" style={{ color: '#D3D3D3' }}>{msg.username}:</span>
+              <span style={{ color: '#98FB98' }}>{msg.message}</span>
             </motion.div>
           ))}
         </AnimatePresence>
