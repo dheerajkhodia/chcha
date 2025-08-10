@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import ReactPlayer from 'react-player/lazy';
-import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, RefreshCw, MessageSquare } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, RefreshCw } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { formatTime } from '@/lib/utils';
@@ -89,17 +89,33 @@ export default function VideoPlayer({
     setIsMuted(!isMuted);
   }
 
-  const toggleFullScreen = (e: React.MouseEvent) => {
+  const toggleFullScreen = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!containerRef.current) return;
+  
     if (!document.fullscreenElement) {
-      containerRef.current.requestFullscreen().catch(err => {
+      try {
+        await containerRef.current.requestFullscreen();
+        if (screen.orientation && typeof screen.orientation.lock === 'function') {
+          await screen.orientation.lock('landscape');
+        }
+      } catch (err: any) {
         alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
-      });
+      }
     } else {
-      document.exitFullscreen();
+      try {
+        if (document.exitFullscreen) {
+            await document.exitFullscreen();
+        }
+        if (screen.orientation && typeof screen.orientation.unlock === 'function') {
+            screen.orientation.unlock();
+        }
+      } catch (err: any) {
+         console.error(`Error exiting full-screen mode: ${err.message} (${err.name})`);
+      }
     }
   };
+  
 
   useEffect(() => {
     const handleFullScreenChange = () => setIsFullScreen(!!document.fullscreenElement);
@@ -244,7 +260,7 @@ export default function VideoPlayer({
             </div>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
-             <Button variant="ghost" size="icon" onClick={toggleFullScreen} className="hover:bg-white/10 md:flex hidden">
+            <Button variant="ghost" size="icon" onClick={toggleFullScreen} className="hover:bg-white/10">
               {isFullScreen ? <Minimize /> : <Maximize />}
             </Button>
           </div>
